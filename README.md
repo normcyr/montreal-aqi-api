@@ -35,13 +35,39 @@ Run the script with the following options:
 ### Fetch AQI for a specific station
 
 ```bash
-montreal_aqi --station <station_id>
+montreal-aqi --station <station_id>
+```
+
+Output:
+
+```bash
+2025-06-17 16:29:02,834 - INFO - Fetching latest data for station 80...
+2025-06-17 16:29:03,019 - INFO - Found latest data at hour 14.
+2025-06-17 16:29:03,020 - INFO - The air quality index for station 80 is 17.
 ```
 
 ### List available monitoring stations
 
 ```bash
-montreal_aqi --list
+montreal-aqi --list
+```
+
+Output:
+
+```bash
+2025-06-17 16:29:43,134 - INFO - Fetching list of monitoring stations...
+2025-06-17 16:29:43,307 - INFO - Found a list of monitoring stations.
+2025-06-17 16:29:43,307 - INFO - {'station_id': '3', 'station_name': 'Saint-Jean-Baptiste ', 'station_address': '1050 A, St-Jean-Baptiste', 'station_borough': 'Rivière-des-Prairies'}
+2025-06-17 16:29:43,307 - INFO - {'station_id': '6', 'station_name': 'Anjou', 'station_address': '7650 rue Châteauneuf', 'station_borough': 'Anjou'}
+2025-06-17 16:29:43,307 - INFO - {'station_id': '17', 'station_name': 'Caserne 17', 'station_address': '4240 rue Charleroi', 'station_borough': 'Montréal-Nord'}
+2025-06-17 16:29:43,307 - INFO - {'station_id': '28', 'station_name': 'Échangeur Décarie', 'station_address': '2495 Duncan', 'station_borough': 'Mont-Royal'}
+2025-06-17 16:29:43,307 - INFO - {'station_id': '31', 'station_name': 'Saint-Dominique', 'station_address': '75, rue Ontario Est', 'station_borough': 'Ville-Marie'}
+2025-06-17 16:29:43,308 - INFO - {'station_id': '50', 'station_name': 'Hochelaga-Maisonneuve', 'station_address': '3250, Ste-Catherine Est', 'station_borough': 'Hochelaga-Maisonneuve'}
+2025-06-17 16:29:43,308 - INFO - {'station_id': '55', 'station_name': 'Rivière-des-Prairies', 'station_address': '12400, Wilfrid-Ouellette, coin Louis-Lumière', 'station_borough': 'Rivière-des-Prairies'}
+2025-06-17 16:29:43,308 - INFO - {'station_id': '66', 'station_name': 'Aéroport de Montréal', 'station_address': 'Aéroport de Montréal, 90-A rue Hervé-St-Martin', 'station_borough': 'Dorval'}
+2025-06-17 16:29:43,308 - INFO - {'station_id': '80', 'station_name': 'Saint-Joseph', 'station_address': '2580 Saint-Joseph est', 'station_borough': 'Rosemont-La Petite-Patrie'}
+2025-06-17 16:29:43,308 - INFO - {'station_id': '99', 'station_name': 'Sainte-Anne-de-Bellevue', 'station_address': '20965, Ch. Ste-Marie', 'station_borough': 'Sainte-Anne-de-Bellevue'}
+2025-06-17 16:29:43,308 - INFO - {'station_id': '103', 'station_name': 'York/Roberval', 'station_address': '5398 rue York', 'station_borough': 'Sud-Ouest'}
 ```
 
 ### Enable debug logging
@@ -49,7 +75,22 @@ montreal_aqi --list
 To enable debug logging for more detailed output, use:
 
 ```bash
-montreal_aqi --debug --station <station_id>
+montreal-aqi --debug --station <station_id>
+```
+
+Output:
+
+```bash
+2025-06-17 16:28:49,042 - INFO - Fetching latest data for station 80...
+2025-06-17 16:28:49,048 - DEBUG - Starting new HTTPS connection (1): donnees.montreal.ca:443
+2025-06-17 16:28:49,223 - DEBUG - https://donnees.montreal.ca:443 "GET /api/3/action/datastore_search?resource_id=a25fdea2-7e86-42ac-8301-ca77db3ff17e&limit=1000 HTTP/1.1" 200 None
+2025-06-17 16:28:49,225 - INFO - Found latest data at hour 14.
+2025-06-17 16:28:49,226 - DEBUG - Parsed: SO2 (sulfur dioxide): 1.0 µg/m3 → AQI 0.1 (Hour 14)
+2025-06-17 16:28:49,226 - DEBUG - Parsed: O3 (ozone): 24.0 µg/m3 → AQI 7.5 (Hour 14)
+2025-06-17 16:28:49,226 - DEBUG - Parsed: NO2 (nitrogen dioxide): 2.0 µg/m3 → AQI 0.2 (Hour 14)
+2025-06-17 16:28:49,226 - DEBUG - Parsed: PM (particulate matter, PM2.5): 12.0 µg/m3 → AQI 17.1 (Hour 14)
+2025-06-17 16:28:49,226 - DEBUG - Highest AQI value: 17.142857142857142
+2025-06-17 16:28:49,226 - INFO - The air quality index for station 80 is 17.
 ```
 
 ### Run interactively
@@ -57,22 +98,9 @@ montreal_aqi --debug --station <station_id>
 If no station ID is provided, the script will prompt for input:
 
 ```bash
-montreal_aqi
+montreal-aqi
 Enter Station ID: <station_id>
 ```
-
-## Example Output
-
-```bash
-2025-01-31 10:00:00 - INFO - Fetching latest data for station 1...
-2025-01-31 10:00:01 - INFO - Found latest data at hour 9.
-2025-01-31 10:00:01 - INFO - The air quality index for station 1 is 42.
-```
-
-## Logging Levels
-
-- **INFO**: Default mode, displays essential messages.
-- **DEBUG**: Provides detailed logs including fetched data and calculations.
 
 ## Technical Data
 
