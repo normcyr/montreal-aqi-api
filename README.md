@@ -1,6 +1,9 @@
 # AQI monitoring for the city of Montréal (Québec, Canada)
 
-![Tests](https://github.com/normcyr/montreal_aqi_api/actions/workflows/ci.yml/badge.svg)
+![Latest Release](https://img.shields.io/github/v/release/normcyr/montreal-aqi-api?label=version)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
+[![CI](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml/badge.svg)](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml)
+![License](https://img.shields.io/github/license/normcyr/montreal-aqi-api)
 
 A Python module to fetch and compute the air quality index (AQI) from the City of Montréal's open data platform.
 
