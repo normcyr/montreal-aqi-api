@@ -19,16 +19,17 @@ def parse_pollutants(data: List[Dict[str, Any]]) -> Dict[str, Pollutant]:
     for entry in data:
         name = entry.get("polluant")
         value = entry.get("valeur")
-        hour = entry.get("heure")
+        try:
+            hour_int = int(entry["heure"])
+        except (KeyError, TypeError, ValueError):
+            continue
         unit = entry.get("unite", "unknown")
 
         if name is None or value is None:
             logging.warning(f"Skipping incomplete data: {entry}")
             continue
-
         try:
             value_float = float(value)
-            hour_int = int(hour)
         except (ValueError, TypeError):
             logging.warning(f"Invalid data types in entry: {entry}")
             continue

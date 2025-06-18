@@ -10,9 +10,14 @@ INDIVIDUAL_VALUES_RESOURCE_ID = "a25fdea2-7e86-42ac-8301-ca77db3ff17e"
 LIST_RESOURCE_ID = "29db5545-89a4-4e4a-9e95-05aa6dc2fd80"
 
 
-def get_latest_individual_data(station_id: str, save_json: bool = False) -> Optional[List[Dict[str, Any]]]:
+def get_latest_individual_data(
+    station_id: str, save_json: bool = False
+) -> Optional[List[Dict[str, Any]]]:
     """Fetch the latest AQI data from the Montreal API for a given station."""
-    params = {"resource_id": INDIVIDUAL_VALUES_RESOURCE_ID, "limit": 1000}
+    params: dict[str, str | int] = {
+        "resource_id": INDIVIDUAL_VALUES_RESOURCE_ID,
+        "limit": 1000,
+    }
     try:
         logging.info(f"Fetching latest data for station {station_id}...")
         response = requests.get(API_URL, params=params)

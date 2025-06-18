@@ -26,11 +26,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Fetch the air quality index from a monitoring station on the island of Montréal"
     )
-    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-    parser.add_argument("--save_json", action="store_true", help="Save all the data in JSON format to data.json")
     parser.add_argument("--station", type=int, help="Specify the station number")
-    parser.add_argument("--list", action="store_true", help="List the station numbers and their location")
-    parser.add_argument("--version", action="version", version=f"montreal-aqi-api {VERSION}")
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List the station numbers and their location",
+    )
+    parser.add_argument(
+        "--save_json",
+        action="store_true",
+        help="Save all the data in JSON format to data.json",
+    )
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    parser.add_argument(
+        "--version", action="version", version=f"montreal-aqi-api {VERSION}"
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -44,7 +54,11 @@ def main() -> None:
         get_list_stations()
         return
 
-    station_id = str(args.station) if args.station is not None else input("Enter Station ID: ").strip()
+    station_id = (
+        str(args.station)
+        if args.station is not None
+        else input("Enter Station ID: ").strip()
+    )
 
     latest_data = get_latest_individual_data(station_id, args.save_json)
     if not latest_data:
