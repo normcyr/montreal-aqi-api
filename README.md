@@ -1,5 +1,7 @@
 # AQI monitoring for the city of Montréal (Québec, Canada)
 
+![Tests](https://github.com/normcyr/montreal_aqi_api/actions/workflows/ci.yml/badge.svg)
+
 A Python module to fetch and compute the air quality index (AQI) from the City of Montréal's open data platform.
 
 This project is intended for use as a standalone CLI tool or as a library within other applications, such as a Home Assistant custom integration.
