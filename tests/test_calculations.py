@@ -1,5 +1,7 @@
-from montreal_aqi_api._internal.calculations import (find_highest_aqi_value,
-                                                     sum_aqi_values)
+from montreal_aqi_api._internal.calculations import (
+    find_highest_aqi_value,
+    sum_aqi_values,
+)
 from montreal_aqi_api._internal.pollutants import Pollutant
 
 

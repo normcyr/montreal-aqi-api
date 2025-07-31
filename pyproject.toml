@@ -1,6 +1,6 @@
 [project]
 name = "montreal_aqi_api"
-version = "0.1.0"
+version = "0.2.0"
 description = "CLI and Python API to fetch and process air quality index (AQI) data from the Montreal open data portal."
 authors = [
     { name = "Normand Cyr", email = "norm@normandcyr.com" }
