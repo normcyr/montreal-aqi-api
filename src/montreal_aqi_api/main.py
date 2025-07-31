@@ -15,7 +15,8 @@ import argparse
 import logging
 
 from montreal_aqi_api._internal.parsing import parse_pollutants
-from montreal_aqi_api._internal.pollutants import Pollutant
+
+# from montreal_aqi_api._internal.pollutants import Pollutant
 from montreal_aqi_api._internal.utils import get_version_from_pyproject
 from montreal_aqi_api.api import get_latest_individual_data, get_list_stations
 
@@ -45,9 +46,7 @@ def main() -> None:
         help="Save all the data in JSON format to data.json",
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-    parser.add_argument(
-        "--version", action="version", version=f"montreal-aqi-api {VERSION}"
-    )
+    parser.add_argument("--version", action="version", version=f"montreal-aqi-api {VERSION}")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -61,11 +60,7 @@ def main() -> None:
         get_list_stations()
         return
 
-    station_id = (
-        str(args.station)
-        if args.station is not None
-        else input("Enter Station ID: ").strip()
-    )
+    station_id = str(args.station) if args.station is not None else input("Enter Station ID: ").strip()
 
     latest_aqi_contrib_data = get_latest_individual_data(station_id, args.save_json)
     if not latest_aqi_contrib_data:
