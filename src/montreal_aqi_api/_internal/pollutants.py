@@ -38,7 +38,9 @@ class Pollutant:
     }
 
     @classmethod
-    def from_data(cls, name: str, aqi_value: float, hour: int, unit: str) -> "Pollutant":
+    def from_data(
+        cls, name: str, aqi_value: float, hour: int, unit: str
+    ) -> "Pollutant":
         ref = cls.REFERENCE_VALUES.get(name)
         fullname = str(ref["fullname"]) if ref and "fullname" in ref else "unknown"
         ref_value = float(ref["ref_value"]) if ref and "ref_value" in ref else 1.0
@@ -53,7 +55,9 @@ class Pollutant:
         )
 
     def compute_pollutant_levels(self) -> None:
-        self.pollutant_level = (self.aqi_value * self.ref_value) / 50 if self.ref_value else 0
+        self.pollutant_level = (
+            (self.aqi_value * self.ref_value) / 50 if self.ref_value else 0
+        )
 
     def compute_us_epa_aqi_value(self) -> None:
         """
@@ -114,10 +118,9 @@ class Pollutant:
         for C_low, C_high, I_low, I_high in breakpoints[self.name]:
             if C_low <= self.pollutant_level <= C_high:
                 # Linear interpolation
-                self.aqi_value = ((I_high - I_low) / (C_high - C_low)) * (self.pollutant_level - C_low) + I_low
+                self.aqi_value = ((I_high - I_low) / (C_high - C_low)) * (
+                    self.pollutant_level - C_low
+                ) + I_low
 
     def __repr__(self) -> str:
-        return (
-            f"{self.name} ({self.fullname}): {self.pollutant_level:.1f} {self.unit} → "
-            f"AQI {self.aqi_value:.0f} (Hour {self.hour})"
-        )
+        return f"{self.name} ({self.fullname}): AQI {self.aqi_value:.0f} → {self.pollutant_level:.1f} {self.unit}"

@@ -43,7 +43,7 @@ def get_latest_individual_data(
         entry for entry in filtered_data if int(entry["heure"]) == max_hour
     ]
 
-    logging.info(f"Found latest data at hour {max_hour}.")
+    logging.info(f"Found latest data at {max_hour}:00.")
     return latest_aqi_contrib_data
 
 
