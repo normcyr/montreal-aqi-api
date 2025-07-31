@@ -15,8 +15,6 @@ import argparse
 import logging
 
 from montreal_aqi_api._internal.parsing import parse_pollutants
-
-# from montreal_aqi_api._internal.pollutants import Pollutant
 from montreal_aqi_api._internal.utils import get_version_from_pyproject
 from montreal_aqi_api.api import get_latest_individual_data, get_list_stations
 
