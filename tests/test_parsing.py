@@ -7,4 +7,4 @@ def test_parse_pollutants_valid():
     ]
     result = parse_pollutants(raw_data)
     assert "NO2" in result
-    assert result["NO2"].value == 50
+    assert result["NO2"].aqi_value == 50

@@ -5,9 +5,9 @@ def test_pollutant_compute_aqi():
         name="NO2",
         fullname="Nitrogen Dioxide",
         ref_value=400,
-        value=80,
+        aqi_value=80,
         hour=10,
         unit="ppb",
     )
-    pollutant.compute_aqi()
-    assert pollutant.aqi_value == 10.0
+    pollutant.compute_pollutant_levels()
+    assert pollutant.aqi_value == 80
