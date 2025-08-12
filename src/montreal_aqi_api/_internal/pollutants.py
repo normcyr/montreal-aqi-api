@@ -11,7 +11,6 @@ class Pollutant:
         name: Acronym of the pollutant (e.g., "O3", "NO2").
         fullname: Full name of the pollutant.
         ref_value: Reference value for calculating AQI.
-        value: Measured value.
         hour: Hour of measurement.
         aqi_value: Calculated AQI contribution.
         unit: Unit of the measured value.

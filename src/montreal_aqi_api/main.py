@@ -2,8 +2,8 @@
 Montreal AQI CLI Tool
 
 This script fetches and processes air quality data from the Montreal open data API.
-It allows listing available monitoring stations and calculating the AQI from the latest
-pollutant measurements for a specific station.
+It allows listing available monitoring stations and calculating the level of various
+pollutants based on their reported AQI for a specific station.
 
 Usage:
     python main.py --station 3
