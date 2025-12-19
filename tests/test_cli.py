@@ -6,14 +6,14 @@ from unittest.mock import patch
 import pytest
 
 from montreal_aqi_api.cli import main
-from montreal_aqi_api.station import StationAQI
+from montreal_aqi_api.station import Station
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 
-def _fake_station() -> StationAQI:
+def _fake_station() -> Station:
     class _FakePollutant:
         def __init__(self, name, aqi):
             self.name = name
@@ -27,7 +27,7 @@ def _fake_station() -> StationAQI:
         "NO2": _FakePollutant("NO2", 15),
     }
 
-    return StationAQI(
+    return Station(
         station_id="3",
         date=date(2025, 12, 18),
         hour=16,

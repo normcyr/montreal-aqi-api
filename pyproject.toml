@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "montreal_aqi_api"
-version = "0.3.0"
+version = "0.3.1"
 description = "CLI and Python API to fetch and process air quality index (AQI) data from the Montreal open data portal."
 authors = [
     { name = "Normand Cyr", email = "norm@normandcyr.com" }
@@ -23,6 +23,18 @@ dev = [
     "black",
     "pytest"
 ]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["pytest"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+ignore_missing_imports = true
 
 [project.urls]
 Homepage = "https://github.com/normcyr/montreal-aqi-api"

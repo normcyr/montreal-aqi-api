@@ -1,5 +1,5 @@
 from montreal_aqi_api.pollutants import Pollutant
-from montreal_aqi_api.station import StationAQI
+from montreal_aqi_api.station import Station
 
 
 def _pollutant(name: str, aqi: float) -> Pollutant:
@@ -13,7 +13,7 @@ def _pollutant(name: str, aqi: float) -> Pollutant:
 
 
 def test_station_aqi_is_max_pollutant():
-    station = StationAQI(
+    station = Station(
         station_id="3",
         date="2025-01-01",
         hour=14,
@@ -27,7 +27,7 @@ def test_station_aqi_is_max_pollutant():
 
 
 def test_station_main_pollutant():
-    station = StationAQI(
+    station = Station(
         station_id="3",
         date="2025-01-01",
         hour=14,

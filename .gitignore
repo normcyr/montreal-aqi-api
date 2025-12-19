@@ -53,3 +53,4 @@ custom_components_test/
 
 commit_notes.md
 *.json
+output_tests.log 
