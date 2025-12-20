@@ -5,8 +5,7 @@
 [![CI](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml/badge.svg)](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml)
 ![License](https://img.shields.io/github/license/normcyr/montreal-aqi-api)
 
-A Python library and CLI tool to fetch, process, and expose air quality
-index (AQI) data from the City of Montréal open data platform.
+A Python library and CLI tool to fetch, process, and expose air quality index (AQI) data from the City of Montréal open data platform.
 
 The project is designed to be:
 
@@ -52,8 +51,7 @@ pip install .
 
 ## CLI Usage
 
-The CLI **always outputs JSON on stdout**.  
-Logs and diagnostics are written to **stderr**.
+The CLI **always outputs JSON on stdout**. Logs and diagnostics are written to **stderr**.
 
 ### Fetch AQI for a specific station
 
@@ -73,11 +71,21 @@ montreal-aqi --list
 montreal-aqi --station <station_id> --debug
 ```
 
+### Print the JSON in a pretty format
+
+```bash
+montreal-aqi --station <station_id> --pretty
+```
+
+or
+
+```bash
+montreal-aqi --list --pretty
+```
+
 ### No arguments
 
-If no arguments are provided, the CLI returns a JSON error payload.
-Interactive prompts are intentionally avoided to keep behavior predictable
-in automated environments.
+If no arguments are provided, the CLI returns a JSON error payload. Interactive prompts are intentionally avoided to keep behavior predictable in automated environments.
 
 ---
 
