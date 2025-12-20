@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/normcyr/montreal-aqi-api/docs/json_contract_v1.schema.json",
+  "title": "Montreal AQI API – JSON Contract v1",
+  "description": "Official JSON contract for montreal-aqi-api CLI and library outputs (v1)",
+
+  "oneOf": [
+    { "$ref": "#/$defs/ErrorPayload" },
+    { "$ref": "#/$defs/StationListPayload" },
+    { "$ref": "#/$defs/StationAQIPayload" }
+  ],
+
+  "$defs": {
+    "VersionField": {
+      "version": {
+        "type": "string",
+        "const": "1",
+        "description": "JSON contract version"
+      }
+    },
+
+    "ErrorPayload": {
+      "type": "object",
+      "required": ["version", "type", "error"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "const": "1"
+        },
+        "type": {
+          "type": "string",
+          "const": "error"
+        },
+        "error": {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Stable machine-readable error code"
+            },
+            "message": {
+              "type": "string",
+              "description": "Human-readable error message"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "StationListPayload": {
+      "type": "object",
+      "required": ["version", "type", "stations"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "const": "1"
+        },
+        "type": {
+          "type": "string",
+          "const": "stations"
+        },
+        "stations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["station_id", "name", "borough"],
+            "properties": {
+              "station_id": { "type": "string" },
+              "name": { "type": "string" },
+              "borough": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "StationAQIPayload": {
+      "type": "object",
+      "required": [
+        "version",
+        "type",
+        "station_id",
+        "date",
+        "hour",
+        "aqi",
+        "dominant_pollutant",
+        "pollutants"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "const": "1"
+        },
+        "type": {
+          "type": "string",
+          "const": "station"
+        },
+        "station_id": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO-8601 date (YYYY-MM-DD)"
+        },
+        "hour": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23
+        },
+        "aqi": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dominant_pollutant": {
+          "type": "string"
+        },
+        "pollutants": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["name", "aqi", "concentration"],
+            "properties": {
+              "name": { "type": "string" },
+              "aqi": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "concentration": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
