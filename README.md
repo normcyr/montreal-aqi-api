@@ -1,7 +1,7 @@
 # AQI monitoring for the city of Montréal (Québec, Canada)
 
 ![Latest Release](https://img.shields.io/github/v/release/normcyr/montreal-aqi-api?label=version)
-![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 [![CI](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml/badge.svg)](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml)
 ![License](https://img.shields.io/github/license/normcyr/montreal-aqi-api)
 
@@ -12,7 +12,7 @@ The project is designed to be:
 
 - **scriptable** (JSON output by default)
 - **embeddable** as a Python library
-- suitable for **automation** (e.g. Home Assistant, cron jobs, data pipelines)
+- suitable for **automation** (Home Assistant, cron jobs, data pipelines)
 
 ---
 
@@ -21,15 +21,13 @@ The project is designed to be:
 - Fetches the latest air quality data from Montréal’s open data portal
 - Lists currently active air quality monitoring stations
 - Computes the AQI based on RSQA methodology
-- Estimates pollutant concentrations from reported AQI contributions[^1]
+- Estimates pollutant concentrations from reported AQI contributions¹
 - Exposes structured station and pollutant data via Python models
 - Outputs **machine-readable JSON** from the CLI
 - Structured logging with optional debug mode
-- Test suite covering core logic and CLI behavior
+- Test suite covering core logic, JSON contract, and CLI behavior
 
-[^1]: The City of Montréal does not currently expose raw pollutant
-concentrations. Estimated concentrations are derived from rounded AQI values
-and should be treated as approximations.
+¹ Estimated concentrations are derived from rounded AQI values and should be treated as approximations.
 
 ---
 
@@ -50,10 +48,12 @@ source venv/bin/activate
 pip install .
 ```
 
+---
+
 ## CLI Usage
 
-The CLI always returns **JSON on stdout**.
-Logs are written to stderr.
+The CLI **always outputs JSON on stdout**.  
+Logs and diagnostics are written to **stderr**.
 
 ### Fetch AQI for a specific station
 
@@ -61,57 +61,10 @@ Logs are written to stderr.
 montreal-aqi --station <station_id>
 ```
 
-Example output:
-
-```json
-{
-  "station": {
-    "station_id": "80",
-    "name": "Saint-Joseph",
-    "borough": "Rosemont-La Petite-Patrie"
-  },
-  "timestamp": "2025-08-08T10:00:00",
-  "aqi": 49,
-  "pollutants": [
-    {
-      "code": "PM2.5",
-      "aqi": 49,
-      "estimated_concentration": 34.3,
-      "unit": "µg/m3"
-    },
-    {
-      "code": "O3",
-      "aqi": 22,
-      "estimated_concentration": 70.4,
-      "unit": "µg/m3"
-    }
-  ]
-}
-```
-
-If no data is available for a station, an error payload is returned.
-
 ### List available monitoring stations
 
 ```bash
 montreal-aqi --list
-```
-
-Example output:
-
-```json
-[
-  {
-    "station_id": "3",
-    "name": "Saint-Jean-Baptiste",
-    "borough": "Rivière-des-Prairies"
-  },
-  {
-    "station_id": "80",
-    "name": "Saint-Joseph",
-    "borough": "Rosemont-La Petite-Patrie"
-  }
-]
 ```
 
 ### Enable debug logging
@@ -120,17 +73,86 @@ Example output:
 montreal-aqi --station <station_id> --debug
 ```
 
-Debug mode increases log verbosity but does not change the JSON output.
-
 ### No arguments
 
-If no arguments are provided, the CLI returns a JSON error message.
+If no arguments are provided, the CLI returns a JSON error payload.
 Interactive prompts are intentionally avoided to keep behavior predictable
 in automated environments.
 
-## Python Usage
+---
 
-The package can also be imported and used programmatically.
+## JSON Contract — Version 1 (Frozen)
+
+As of **v0.4.0**, the JSON output contract is **explicitly versioned and frozen**. The output format is formally specified in:
+[docs/json_contract_v1.md](docs/json_contract_v1.md).
+
+The JSON output is governed by the official JSON Schema v1 and all payloads include:
+
+```json
+{
+  "version": 1,
+  "type": "..."
+}
+```
+
+### Error Payload
+
+```json
+{
+  "version": 1,
+  "type": "error",
+  "error": {
+    "code": "NO_DATA",
+    "message": "No data available for this station"
+  }
+}
+```
+
+### Stations List Payload
+
+```json
+{
+  "version": 1,
+  "type": "stations",
+  "stations": [
+    {
+      "station_id": "3",
+      "name": "Saint-Jean-Baptiste",
+      "borough": "Rivière-des-Prairies"
+    }
+  ]
+}
+```
+
+### Station AQI Payload
+
+```json
+{
+  "version": 1,
+  "type": "station",
+  "station_id": "80",
+  "date": "2025-08-08",
+  "hour": 10,
+  "aqi": 49,
+  "dominant_pollutant": "PM2.5",
+  "pollutants": {
+    "PM2.5": {
+      "name": "PM2.5",
+      "aqi": 49,
+      "concentration": 34.3
+    },
+    "O3": {
+      "name": "O3",
+      "aqi": 22,
+      "concentration": 70.4
+    }
+  }
+}
+```
+
+---
+
+## Python Usage
 
 ```python
 from montreal_aqi_api.service import get_station_aqi
@@ -140,38 +162,42 @@ if station:
     print(station.to_dict())
 ```
 
-Domain objects such as `Station` and `Pollutant` expose explicit serialization helpers (`to_dict`) to ease downstream usage.
+Domain objects (`Station`, `Pollutant`) expose explicit serialization helpers
+to ease downstream usage.
 
-## AQI Calculation
+---
 
-AQI values follow the methodology defined by the [Réseau de surveillance de la qualité de l’air (RSQA)](https://donnees.montreal.ca/dataset/rsqa-indice-qualite-air#methodology).
+## AQI Methodology
+
+AQI values follow the methodology defined by the
+[Réseau de surveillance de la qualité de l’air (RSQA)](https://donnees.montreal.ca/dataset/rsqa-indice-qualite-air).
 
 ### Reference Values
 
-| Pollutant     | Full Name               | Reference Value |
-|---------------|-------------------------|-----------------|
-| SO₂           | Sulfur Dioxide          | 500 µg/m3       |
-| CO            | Carbon Monoxide         | 35 mg/m3        |
-| O₃            | Ozone                   | 160 µg/m3       |
-| NO₂           | Nitrogen Dioxide        | 400 µg/m3       |
-| PM (PM2.5)    | Particulate Matter      | 35 µg/m3        |
+| Pollutant | Full Name            | Reference |
+|----------|----------------------|-----------|
+| SO₂      | Sulfur Dioxide       | 500 µg/m³ |
+| CO       | Carbon Monoxide      | 35 mg/m³  |
+| O₃       | Ozone                | 160 µg/m³ |
+| NO₂      | Nitrogen Dioxide     | 400 µg/m³ |
+| PM2.5    | Particulate Matter   | 35 µg/m³  |
 
-The AQI contribution for each pollutant is calculated individually using the formula above. The reported AQI value at a specific station is the highest of the sub-indices calculated for the pollutants continuously measured at that station. It provides an overall indication of air quality, helping to assess the overall health impact based on the measured pollutants.
-
-The air quality index (AQI) value is defined as follows:
-
-- Good: From 1 to 25
-- Acceptable: From 26 to 50
-- Poor: 51 or higher
+---
 
 ## Project Status
 
-- Core logic and CLI behavior are covered by automated tests
-- Output format is stable enough for experimentation
+- JSON contract v1 frozen and validated by tests
+- Suitable for automation and integration
+- API stability guaranteed within v1
+
+---
 
 ## Data Source
 
-Data is retrieved from the [Ville de Montréal Open Data Portal](https://donnees.montreal.ca/fr/dataset/rsqa-indice-qualite-air).
+Data is retrieved from the
+[Ville de Montréal Open Data Portal](https://donnees.montreal.ca/fr/dataset/rsqa-indice-qualite-air).
+
+---
 
 ## License
 

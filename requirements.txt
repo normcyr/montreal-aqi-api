@@ -1,3 +1,5 @@
 requests>=2.28
-pytest>=7.4
 types-requests>=2.28
+jsonschema>=4.17
+types-jsonschema>=4.17
+pytest>=7.4

@@ -1,3 +1,5 @@
+CONTRACT_VERSION: str = "1"
+
 API_URL = "https://donnees.montreal.ca/api/3/action/datastore_search"
 
 RESID_LIST = "29db5545-89a4-4e4a-9e95-05aa6dc2fd80"

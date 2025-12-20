@@ -26,11 +26,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .[dev]
 
-      - name: Lint with black
-        run: black --check montreal_aqi_api tests
+      - name: Format check (black)
+        run: black --check montreal_aqi_api
 
-      - name: Type check with mypy
+      - name: Static typing (mypy)
         run: mypy montreal_aqi_api
 
-      - name: Run tests
-        run: pytest --tb=short --disable-warnings
+      - name: Unit & contract tests (pytest)
+        run: pytest tests --tb=short --disable-warnings
