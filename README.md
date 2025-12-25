@@ -3,6 +3,8 @@
 ![Latest Release](https://img.shields.io/github/v/release/normcyr/montreal-aqi-api?label=version)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 [![CI](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml/badge.svg)](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml)
+![PyPI](https://img.shields.io/pypi/v/montreal-aqi-api)
+![Downloads](https://img.shields.io/pypi/dm/montreal-aqi-api)
 ![License](https://img.shields.io/github/license/normcyr/montreal-aqi-api)
 
 A Python library and CLI tool to fetch, process, and expose air quality index (AQI) data from the City of Montréal open data platform.
@@ -38,6 +40,14 @@ The project is designed to be:
 ---
 
 ## Installation
+
+### From PyPI (recommended)
+
+```bash
+pip install montreal-aqi-api
+```
+
+### From source
 
 ```bash
 git clone https://github.com/normcyr/montreal-aqi-api.git
@@ -86,6 +96,25 @@ montreal-aqi --list --pretty
 ### No arguments
 
 If no arguments are provided, the CLI returns a JSON error payload. Interactive prompts are intentionally avoided to keep behavior predictable in automated environments.
+
+---
+
+## Integrations
+
+This library is designed to be consumed by automated systems and integrations.
+
+### Home Assistant
+
+Used by the custom Home Assistant integration:
+
+- https://github.com/normcyr/home-assistant-montreal-aqi
+
+### Other Use Cases
+
+- Cron jobs
+- Data ingestion pipelines
+- Monitoring dashboards
+- Research / environmental analysis
 
 ---
 
@@ -183,12 +212,12 @@ AQI values follow the methodology defined by the
 ### Reference Values
 
 | Pollutant | Full Name            | Reference |
-|----------|----------------------|-----------|
-| SO₂      | Sulfur Dioxide       | 500 µg/m³ |
-| CO       | Carbon Monoxide      | 35 mg/m³  |
-| O₃       | Ozone                | 160 µg/m³ |
-| NO₂      | Nitrogen Dioxide     | 400 µg/m³ |
-| PM2.5    | Particulate Matter   | 35 µg/m³  |
+|-----------|----------------------|-----------|
+| SO₂       | Sulfur Dioxide       | 500 µg/m³ |
+| CO        | Carbon Monoxide      | 35 mg/m³  |
+| O₃        | Ozone                | 160 µg/m³ |
+| NO₂       | Nitrogen Dioxide     | 400 µg/m³ |
+| PM2.5     | Particulate Matter   | 35 µg/m³  |
 
 ---
 
@@ -197,6 +226,20 @@ AQI values follow the methodology defined by the
 - JSON contract v1 frozen and validated by tests
 - Suitable for automation and integration
 - API stability guaranteed within v1
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+Please ensure that:
+
+- tests pass (`pytest`)
+- the JSON contract remains backward compatible
+- any change affecting output is covered by tests
+
+Open an issue before proposing breaking changes.
 
 ---
 

@@ -1,35 +1,50 @@
 [build-system]
-requires = ["setuptools>=65.5.0", "wheel"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "montreal_aqi_api"
-version = "0.4.0"
-description = "CLI and Python API to fetch and process air quality index (AQI) data from the Montreal open data portal."
-authors = [
-    { name = "Normand Cyr", email = "norm@normandcyr.com" }
-]
+name = "montreal-aqi-api"
+version = "0.4.1"
+description = "CLI and Python API to fetch air quality index (AQI) data from the Montreal open data portal"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
+
+authors = [
+    { name = "Normand Cyr", email = "norm@normandcyr.com" }
+]
+
 dependencies = [
     "requests>=2.28"
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries"
+]
+
+keywords = ["aqi", "air-quality", "montreal", "open-data"]
 
 [project.optional-dependencies]
 dev = [
+    "black",
     "mypy",
+    "pytest",
+    "pytest-cov",
     "types-requests",
     "jsonschema",
     "types-jsonschema",
-    "black",
-    "pytest",
-    "pytest-cov",
 ]
 
 [project.urls]
 Homepage = "https://github.com/normcyr/montreal-aqi-api"
-Source = "https://github.com/normcyr/montreal-aqi-api"
+Repository = "https://github.com/normcyr/montreal-aqi-api"
 Issues = "https://github.com/normcyr/montreal-aqi-api/issues"
 
 [project.scripts]
@@ -42,7 +57,6 @@ exclude = ["tests*"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-warn_unused_configs = true
 
 [[tool.mypy.overrides]]
 module = ["pytest"]
