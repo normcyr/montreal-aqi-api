@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Mapping
+from zoneinfo import ZoneInfo
 
 from montreal_aqi_api._internal.parsing import parse_pollutants
 from montreal_aqi_api.api import fetch_latest_station_records, fetch_open_stations
@@ -53,18 +54,25 @@ def get_station_aqi(station_id: str) -> Station | None:
 
     station_date, hour = metadata
 
+    tz = ZoneInfo("America/Toronto")
+    timestamp = datetime(
+        station_date.year,
+        station_date.month,
+        station_date.day,
+        hour,
+        tzinfo=tz,
+    ).isoformat()
+
     station = Station(
         station_id=station_id,
-        date=station_date,
+        date=station_date.isoformat(),
         hour=hour,
+        timestamp=timestamp,
         pollutants=pollutants,
     )
 
     logger.info(
-        "Station %s AQI=%d dominant=%s",
-        station_id,
-        round(station.aqi),
-        station.main_pollutant.name,
+        f"Station {station_id} AQI={round(station.aqi)} dominant={station.main_pollutant} timestamp={timestamp}",
     )
 
     return station

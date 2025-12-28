@@ -7,6 +7,7 @@ RESID_IQA_PAR_STATION_EN_TEMPS_REEL = "f4eca3bf-5ded-4d3c-a8dc-ed42486498f3"
 
 POLLUTANT_ALIASES = {
     "PM": "PM2.5",
+    "PM25": "PM2.5",
 }
 
 REFERENCE_VALUES = {

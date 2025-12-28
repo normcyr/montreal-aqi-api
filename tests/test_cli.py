@@ -23,8 +23,9 @@ class _FakePollutant:
 class _FakeStation:
     def __init__(self) -> None:
         self.station_id = "3"
-        self.date = __import__("datetime").date(2025, 12, 18)
+        self.date = str(__import__("datetime").date(2025, 12, 18))
         self.hour = 16
+        self.timestamp = "2025-12-18T16:00:00-05:00"
         self.pollutants = {
             "PM2.5": _FakePollutant("PM2.5", 42.3, 12.1),
             "NO2": _FakePollutant("NO2", 18.7),
@@ -41,8 +42,9 @@ class _FakeStation:
     def to_dict(self) -> dict[str, object]:
         return {
             "station_id": self.station_id,
-            "date": self.date.isoformat(),
+            "date": self.date,
             "hour": self.hour,
+            "timestamp": self.timestamp,
             "aqi": round(self.aqi),
             "dominant_pollutant": self.main_pollutant.name,
             "pollutants": {

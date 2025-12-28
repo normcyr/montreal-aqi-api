@@ -7,8 +7,10 @@ from montreal_aqi_api.service import get_station_aqi
 def test_get_station_aqi(mock_fetch):
     mock_fetch.return_value = [
         {
-            "pollutant": "PM2.5",
+            "pollutant": "PM25",
             "valeur": "40",
+            "concentration": "12.3",
+            "unite": "µg/m³",
             "heure": "15",
             "date": "2025-01-01",
         }
@@ -19,4 +21,4 @@ def test_get_station_aqi(mock_fetch):
     assert station is not None
     assert station.station_id == "3"
     assert station.aqi == 40
-    assert station.main_pollutant.name == "PM2.5"
+    assert station.main_pollutant == "PM2.5"

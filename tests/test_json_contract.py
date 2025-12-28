@@ -39,6 +39,7 @@ def test_station_aqi_payload_contract():
         "station_id": "80",
         "date": "2025-12-18",
         "hour": 16,
+        "timestamp": "2025-12-18T16:00:00-05:00",
         "aqi": 49,
         "dominant_pollutant": "PM2.5",
         "pollutants": {

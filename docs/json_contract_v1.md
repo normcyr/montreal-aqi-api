@@ -99,6 +99,7 @@ Returned by `--station <id>`.
   "station_id": "80",
   "date": "2025-08-08",
   "hour": 10,
+  "timestamp": "2025-12-18T16:00:00-05:00",
   "aqi": 49,
   "dominant_pollutant": "PM2.5",
   "pollutants": {
@@ -125,6 +126,7 @@ Returned by `--station <id>`.
 | station_id | string | Station identifier |
 | date | string | ISO date (`YYYY-MM-DD`) |
 | hour | integer | Hour of measurement (0–23) |
+| timestamp | string | Timestamp ISO 8601 |
 | aqi | integer | Global AQI |
 | dominant_pollutant | string | Pollutant driving AQI |
 | pollutants | object | Map of pollutant code → pollutant object |

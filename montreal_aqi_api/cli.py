@@ -86,12 +86,14 @@ def main() -> None:
     station_payload: dict[str, Any] = {
         "version": str(CONTRACT_VERSION),
         "type": "station",
-        "station_id": station_data["station_id"],
-        "date": station_data["date"],
-        "hour": station_data["hour"],
-        "aqi": station_data["aqi"],
-        "dominant_pollutant": station_data["dominant_pollutant"],
-        "pollutants": station_data["pollutants"],
+        **station_data,
+        # "station_id": station_data["station_id"],
+        # "date": station_data["date"],
+        # "hour": station_data["hour"],
+        # "timestamp": station_data["timestamp"],
+        # "aqi": station_data["aqi"],
+        # "dominant_pollutant": station_data["dominant_pollutant"],
+        # "pollutants": station_data["pollutants"],
     }
 
     _print_json(station_payload, pretty=args.pretty)
