@@ -18,7 +18,9 @@ Params = Dict[str, Union[str, int, float]]
 
 
 def _fetch(resource_id: str) -> List[Dict[str, Any]]:
-    logger.info("Fetching data from Montreal open data API (resource_id=%s)", resource_id)
+    logger.info(
+        "Fetching data from Montreal open data API (resource_id=%s)", resource_id
+    )
 
     params: Params = {
         "resource_id": resource_id,
@@ -80,7 +82,11 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
     """
     records = _fetch(RESID_IQA_PAR_STATION_EN_TEMPS_REEL)
 
-    station_records = [r for r in records if isinstance(r.get("stationId"), str) and r.get("stationId") == station_id]
+    station_records = [
+        r
+        for r in records
+        if isinstance(r.get("stationId"), str) and r.get("stationId") == station_id
+    ]
     if not station_records:
         logger.warning("No records found for station %s", station_id)
         return []
@@ -91,7 +97,9 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
         logger.warning("Invalid 'heure' field in station records for %s", station_id)
         return []
 
-    latest_records = [r for r in station_records if int(r.get("heure", -1)) == latest_hour]
+    latest_records = [
+        r for r in station_records if int(r.get("heure", -1)) == latest_hour
+    ]
 
     logger.debug(
         "Found %d records for station %s at hour %s",
