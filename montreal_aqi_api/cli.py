@@ -8,6 +8,11 @@ from typing import Any
 from montreal_aqi_api import get_station_aqi, list_open_stations
 from montreal_aqi_api._internal.utils import get_version
 from montreal_aqi_api.config import CONTRACT_VERSION
+from montreal_aqi_api.exceptions import (
+    APIInvalidResponse,
+    APIServerUnreachable,
+    MontrealAQIError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -60,40 +65,85 @@ def main() -> None:
         )
         return
 
-    # ---- List stations
-    if args.list:
-        stations_payload: dict[str, Any] = {
-            "version": str(CONTRACT_VERSION),
-            "type": "stations",
-            "stations": list_open_stations(),
-        }
-        _print_json(stations_payload, pretty=args.pretty)
-        return
+    try:
+        if args.list:
+            stations_payload = {
+                "version": str(CONTRACT_VERSION),
+                "type": "stations",
+                "stations": list_open_stations(),
+            }
+            _print_json(stations_payload, pretty=args.pretty)
+            return
 
-    # ---- Station AQI
-    station = get_station_aqi(args.station)
-    if station is None:
-        logger.error("No data available for station %s", args.station)
+        if args.station:
+            station = get_station_aqi(args.station)
+            if station is None:
+                _error(
+                    code="NO_DATA",
+                    message="No data available for this station",
+                    pretty=args.pretty,
+                )
+                return
+
+            station_payload = {
+                "version": str(CONTRACT_VERSION),
+                "type": "station",
+                **station.to_dict(),
+            }
+            _print_json(station_payload, pretty=args.pretty)
+
+    except APIServerUnreachable:
         _error(
-            code="NO_DATA",
-            message="No data available for this station",
+            code="API_UNREACHABLE",
+            message="Montreal open data API is unreachable",
             pretty=args.pretty,
         )
-        return
+        raise SystemExit(2)
 
-    station_data = station.to_dict()
+    except APIInvalidResponse:
+        _error(
+            code="API_INVALID_RESPONSE",
+            message="Unexpected response from Montreal open data API",
+            pretty=args.pretty,
+        )
+        raise SystemExit(3)
 
-    station_payload: dict[str, Any] = {
-        "version": str(CONTRACT_VERSION),
-        "type": "station",
-        **station_data,
-        # "station_id": station_data["station_id"],
-        # "date": station_data["date"],
-        # "hour": station_data["hour"],
-        # "timestamp": station_data["timestamp"],
-        # "aqi": station_data["aqi"],
-        # "dominant_pollutant": station_data["dominant_pollutant"],
-        # "pollutants": station_data["pollutants"],
-    }
+    except MontrealAQIError as exc:
+        _error(
+            code="API_ERROR",
+            message=str(exc),
+            pretty=args.pretty,
+        )
+        raise SystemExit(1)
 
-    _print_json(station_payload, pretty=args.pretty)
+    # ---- List stations
+    # if args.list:
+    #     stations_payload: dict[str, Any] = {
+    #         "version": str(CONTRACT_VERSION),
+    #         "type": "stations",
+    #         "stations": list_open_stations(),
+    #     }
+    #     _print_json(stations_payload, pretty=args.pretty)
+    #     return
+
+    # # ---- Station AQI
+    # if args.station:
+    #     station = get_station_aqi(args.station)
+    #     if station is None:
+    #         logger.error("No data available for station %s", args.station)
+    #         _error(
+    #             code="NO_DATA",
+    #             message="No data available for this station",
+    #             pretty=args.pretty,
+    #         )
+    #         return
+
+    #     station_data = station.to_dict()
+
+    #     station_payload: dict[str, Any] = {
+    #         "version": str(CONTRACT_VERSION),
+    #         "type": "station",
+    #         **station_data,
+    #     }
+
+    #     _print_json(station_payload, pretty=args.pretty)

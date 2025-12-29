@@ -204,6 +204,47 @@ to ease downstream usage.
 
 ---
 
+## Exit codes
+
+The `montreal-aqi` CLI exits with explicit status codes to make it suitable for scripting, automation, and CI pipelines.
+
+| Exit code | Meaning | Description |
+|----------:|--------|-------------|
+| `0` | Success | Command executed successfully |
+| `1` | Generic API error | An unexpected internal API error occurred |
+| `2` | API unreachable | Montreal Open Data API could not be reached (network error, timeout, DNS, etc.) |
+| `3` | Invalid API response | API returned malformed or unexpected JSON payload |
+
+### Details
+
+- All errors are reported **both** via:
+  - a structured JSON error payload on `stdout`
+  - a non-zero process exit code
+- This ensures compatibility with:
+  - shell scripts
+  - cron jobs
+  - CI/CD pipelines
+  - Home Assistant / automation tools
+
+### Example
+
+```bash
+$ montreal-aqi --station 80
+{
+  "version": "1",
+  "type": "error",
+  "error": {
+    "code": "API_UNREACHABLE",
+    "message": "Montreal open data API is unreachable"
+  }
+}
+
+$ echo $?
+2
+```
+
+---
+
 ## AQI Methodology
 
 AQI values follow the methodology defined by the

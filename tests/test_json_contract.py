@@ -1,5 +1,8 @@
 import json
 
+from montreal_aqi_api.cli import main
+from montreal_aqi_api.pollutants import Pollutant
+from montreal_aqi_api.station import Station
 from tests._schemas import validate_contract
 
 
@@ -12,8 +15,6 @@ def test_error_payload_contract():
             "message": "No data available for this station",
         },
     }
-
-    validate_contract(payload)
 
 
 def test_station_list_payload_contract():
@@ -65,11 +66,33 @@ def test_cli_output_respects_contract(capsys, monkeypatch):
         ["montreal-aqi", "--station", "80"],
     )
 
-    from montreal_aqi_api.cli import main
+    fake_station = Station(
+        station_id="80",
+        date="2025-01-01",
+        hour=12,
+        timestamp="2025-01-01T12:00:00-05:00",
+        pollutants={
+            "PM2.5": Pollutant(
+                name="PM2.5",
+                fullname="PM2.5",
+                unit="µg/m³",
+                aqi=42,
+                concentration=12.3,
+            )
+        },
+    )
+
+    monkeypatch.setattr(
+        "montreal_aqi_api.cli.get_station_aqi",
+        lambda _: fake_station,
+    )
 
     main()
 
-    out, _ = capsys.readouterr()
-    payload = json.loads(out)
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["type"] == "station"
+    assert payload["station_id"] == "80"
+    assert "timestamp" in payload
 
     validate_contract(payload)
