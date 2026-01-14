@@ -55,8 +55,10 @@ exclude = ["tests*"]
 
 [tool.ruff]
 line-length = 88
-target-version = ["py311"]
-extend-ignore = ["E203", "W503"]
+target-version = "py311"
+
+[tool.ruff.lint]
+extend-ignore = ["E203"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
