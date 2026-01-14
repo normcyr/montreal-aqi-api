@@ -279,6 +279,7 @@ Please ensure that:
 - tests pass (`pytest`)
 - the JSON contract remains backward compatible
 - any change affecting output is covered by tests
+- code is linted/formatted with `ruff` (run `ruff format --check .` and `ruff check .`)
 
 Open an issue before proposing breaking changes.
 

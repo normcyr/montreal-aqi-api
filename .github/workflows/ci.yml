@@ -26,11 +26,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .[dev]
 
-      - name: Format check (black)
-        run: black --check montreal_aqi_api
-
-      - name: Static typing (mypy)
-        run: mypy montreal_aqi_api
+      - name: Lint & format check (ruff)
+        run: |
+          ruff format --check .
+          ruff check .
 
       - name: Unit & contract tests (pytest)
         run: pytest tests --tb=short --disable-warnings
