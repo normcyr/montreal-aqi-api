@@ -47,7 +47,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Montreal AQI CLI",
     )
-    parser.add_argument("--station", type=str, help="Station ID(s), comma-separated for multiple")
+    parser.add_argument(
+        "--station", type=str, help="Station ID(s), comma-separated for multiple"
+    )
     parser.add_argument("--list", action="store_true", help="List open stations")
     parser.add_argument(
         "--pretty", action="store_true", help="Pretty print JSON output"
