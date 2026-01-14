@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, Dict, List, Union
 
 import requests
 
 from montreal_aqi_api.config import (
+    API_REQUEST_LIMIT,
+    API_TIMEOUT_SECONDS,
     API_URL,
     RESID_IQA_PAR_STATION_EN_TEMPS_REEL,
     RESID_LIST,
@@ -16,23 +19,37 @@ logger = logging.getLogger(__name__)
 
 Params = Dict[str, Union[str, int, float]]
 
+# Simple in-memory cache: resource_id -> (timestamp, records)
+_api_cache: Dict[str, tuple[float, List[Dict[str, Any]]]] = {}
+CACHE_TTL_SECONDS = 300  # 5 minutes
+
 
 def _fetch(resource_id: str) -> List[Dict[str, Any]]:
-    logger.info(
-        "Fetching data from Montreal open data API (resource_id=%s)", resource_id
-    )
+    now = time.time()
+    if resource_id in _api_cache:
+        cached_time, cached_records = _api_cache[resource_id]
+        if now - cached_time < CACHE_TTL_SECONDS:
+            logger.debug("Using cached data for resource_id=%s", resource_id)
+            return cached_records
+        else:
+            logger.debug("Cache expired for resource_id=%s", resource_id)
 
+    logger.info("Fetching data from Montreal open data API (resource_id=%s)", resource_id)
+
+    start_time = time.time()
     params: Params = {
         "resource_id": resource_id,
-        "limit": 1000,
+        "limit": API_REQUEST_LIMIT,
     }
-
     try:
-        response = requests.get(API_URL, params=params, timeout=10)
+        response = requests.get(API_URL, params=params, timeout=API_TIMEOUT_SECONDS)
         response.raise_for_status()
-    except requests.exceptions.RequestException as exc:
+    except Exception as exc:
         logger.error("API unreachable: %s", exc)
         raise APIServerUnreachable("Montreal open data API unreachable") from exc
+
+    fetch_time = time.time() - start_time
+    logger.debug("API request took %.2f seconds", fetch_time)
 
     try:
         payload = response.json()
@@ -42,38 +59,14 @@ def _fetch(resource_id: str) -> List[Dict[str, Any]]:
     records = payload.get("result", {}).get("records")
 
     if not isinstance(records, list):
+        logger.warning("Unexpected API response format: records is not a list")
+        logger.debug("Payload: %s", payload)
         raise APIInvalidResponse("Unexpected API response format")
 
+    # Cache the result
+    _api_cache[resource_id] = (now, records)
+
     return records
-
-
-# def _fetch(resource_id: str) -> List[Dict[str, Any]]:
-#     """
-#     Fetch raw records from the Montreal open data API for a given resource.
-#     """
-#     logger.info("Fetching data from Montreal open data API (resource_id=%s)", resource_id)
-
-#     params: Params = {
-#         "resource_id": resource_id,
-#         "limit": 1000,
-#     }
-
-#     try:
-#         response = requests.get(API_URL, params=params, timeout=1)  # Use 10 sec in production
-#         response.raise_for_status()
-#     except requests.exceptions.ConnectionError:
-#         logger.error("Server unreachable")
-#         return []
-
-#     payload = response.json()
-#     records = payload.get("result", {}).get("records", [])
-
-#     if not isinstance(records, list):
-#         logger.warning("Unexpected API response format")
-#         return []
-
-#     logger.debug("Retrieved %d records", len(records))
-#     return records
 
 
 def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
@@ -82,11 +75,7 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
     """
     records = _fetch(RESID_IQA_PAR_STATION_EN_TEMPS_REEL)
 
-    station_records = [
-        r
-        for r in records
-        if isinstance(r.get("stationId"), str) and r.get("stationId") == station_id
-    ]
+    station_records = [r for r in records if isinstance(r.get("stationId"), str) and r.get("stationId") == station_id]
     if not station_records:
         logger.warning("No records found for station %s", station_id)
         return []
@@ -97,9 +86,7 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
         logger.warning("Invalid 'heure' field in station records for %s", station_id)
         return []
 
-    latest_records = [
-        r for r in station_records if int(r.get("heure", -1)) == latest_hour
-    ]
+    latest_records = [r for r in station_records if int(r.get("heure", -1)) == latest_hour]
 
     logger.debug(
         "Found %d records for station %s at hour %s",

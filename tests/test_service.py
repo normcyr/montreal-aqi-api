@@ -22,3 +22,19 @@ def test_get_station_aqi(mock_fetch):
     assert station.station_id == "3"
     assert station.aqi == 40
     assert station.main_pollutant == "PM2.5"
+
+
+@patch("montreal_aqi_api.service.fetch_latest_station_records")
+def test_get_station_aqi_invalid_metadata_returns_none(mock_fetch):
+    mock_fetch.return_value = [
+        {
+            "pollutant": "PM25",
+            "valeur": "40",
+            "heure": "invalid_hour",
+            "date": "2025-01-01",
+        }
+    ]
+
+    station = get_station_aqi("3")
+
+    assert station is None

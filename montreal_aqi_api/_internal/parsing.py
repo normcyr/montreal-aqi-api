@@ -57,13 +57,15 @@ def parse_pollutants(
 
         concentration = (aqi / 100.0) * float(reference)
 
-        pollutants[code] = Pollutant(
-            name=code,
-            fullname=fullname,
-            unit=unit,
-            aqi=aqi,
-            concentration=concentration,
-        )
+        existing = pollutants.get(code)
+        if existing is None or aqi > existing.aqi:
+            pollutants[code] = Pollutant(
+                name=code,
+                fullname=fullname,
+                unit=unit,
+                aqi=aqi,
+                concentration=concentration,
+            )
 
         logger.debug(
             "Parsed pollutant %s: AQI=%d concentration=%.2f %s",

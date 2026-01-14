@@ -33,3 +33,13 @@ def test_unexpected_payload_format_raises(mock_get):
 
     with pytest.raises(APIInvalidResponse):
         fetch_latest_station_records("3")
+
+
+@patch("montreal_aqi_api.api.requests.get")
+def test_records_not_list_raises(mock_get):
+    mock_response = mock_get.return_value
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {"result": {"records": "not a list"}}
+
+    with pytest.raises(APIInvalidResponse):
+        fetch_latest_station_records("3")

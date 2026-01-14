@@ -72,7 +72,11 @@ def get_station_aqi(station_id: str) -> Station | None:
     )
 
     logger.info(
-        f"Station {station_id} AQI={round(station.aqi)} dominant={station.main_pollutant} timestamp={timestamp}",
+        "Station %s AQI=%s dominant=%s timestamp=%s",
+        station_id,
+        round(station.aqi),
+        station.main_pollutant,
+        timestamp,
     )
 
     return station
