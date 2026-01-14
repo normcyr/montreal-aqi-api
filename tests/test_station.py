@@ -1,11 +1,8 @@
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 from montreal_aqi_api.pollutants import Pollutant
 from montreal_aqi_api.station import Station
 
 
-def _pollutant(name: str, aqi: float) -> Pollutant:
+def _pollutant(name: str, aqi: int) -> Pollutant:
     return Pollutant(
         name=name,
         fullname=name,
@@ -46,22 +43,20 @@ def test_station_main_pollutant():
 
 
 def test_station_to_dict_includes_published_at_iso_datetime():
-    tz = ZoneInfo("America/Toronto")
-
     pollutants = {
         "PM2.5": Pollutant(
             name="PM2.5",
             fullname="PM2.5",
             concentration=12.3,
             unit="µg/m³",
-            aqi=42.7,
+            aqi=43,
         ),
         "O3": Pollutant(
             name="O3",
             fullname="Ozone",
             concentration=55.0,
             unit="µg/m³",
-            aqi=18.2,
+            aqi=18,
         ),
     }
 
@@ -75,20 +70,18 @@ def test_station_to_dict_includes_published_at_iso_datetime():
 
     data = station.to_dict()
 
-    # champs historiques toujours présents
     assert data["station_id"] == "TEST01"
     assert data["date"] == "2025-01-04"
     assert data["hour"] == 13
 
-    # nouveau champ
     assert "timestamp" in data
     assert data["timestamp"] == "2025-01-04T13:00:00-05:00"
 
-    # AQI calculé
     assert data["aqi"] == 43
     assert data["dominant_pollutant"] == "PM2.5"
 
-    # structure pollutants inchangée
     assert "pollutants" in data
+    assert isinstance(data["pollutants"], dict)
+    assert isinstance(data["pollutants"]["PM2.5"], dict)
     assert data["pollutants"]["PM2.5"]["aqi"] == 43
     assert data["pollutants"]["O3"]["aqi"] == 18

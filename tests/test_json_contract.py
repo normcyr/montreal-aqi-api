@@ -1,12 +1,15 @@
 import json
 
+from _pytest.capture import CaptureFixture
+from _pytest.monkeypatch import MonkeyPatch
+
 from montreal_aqi_api.cli import main
 from montreal_aqi_api.pollutants import Pollutant
 from montreal_aqi_api.station import Station
 from tests._schemas import validate_contract
 
 
-def test_error_payload_contract():
+def test_error_payload_contract() -> None:
     payload = {
         "version": "1",
         "type": "error",
@@ -16,8 +19,10 @@ def test_error_payload_contract():
         },
     }
 
+    validate_contract(payload)
 
-def test_station_list_payload_contract():
+
+def test_station_list_payload_contract() -> None:
     payload = {
         "version": "1",
         "type": "stations",
@@ -33,7 +38,7 @@ def test_station_list_payload_contract():
     validate_contract(payload)
 
 
-def test_station_aqi_payload_contract():
+def test_station_aqi_payload_contract() -> None:
     payload = {
         "version": "1",
         "type": "station",
@@ -60,7 +65,9 @@ def test_station_aqi_payload_contract():
     validate_contract(payload)
 
 
-def test_cli_output_respects_contract(capsys, monkeypatch):
+def test_cli_output_respects_contract(
+    capsys: CaptureFixture[str], monkeypatch: MonkeyPatch
+) -> None:
     monkeypatch.setattr(
         "sys.argv",
         ["montreal-aqi", "--station", "80"],

@@ -4,7 +4,6 @@ import json
 import sys
 from unittest.mock import patch
 
-import pytest
 
 from montreal_aqi_api.cli import main
 
