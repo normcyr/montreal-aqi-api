@@ -5,6 +5,13 @@ API_URL = "https://donnees.montreal.ca/api/3/action/datastore_search"
 RESID_LIST = "29db5545-89a4-4e4a-9e95-05aa6dc2fd80"
 RESID_IQA_PAR_STATION_EN_TEMPS_REEL = "f4eca3bf-5ded-4d3c-a8dc-ed42486498f3"
 
+API_TIMEOUT_SECONDS: int = 10
+API_REQUEST_LIMIT: int = 1000
+MAX_RETRIES = 3
+RETRY_BACKOFF_SECONDS = 1.0
+
+CACHE_TTL_SECONDS = 300
+
 POLLUTANT_ALIASES = {
     "PM": "PM2.5",
     "PM25": "PM2.5",

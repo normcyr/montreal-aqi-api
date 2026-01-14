@@ -97,6 +97,34 @@ montreal-aqi --list --pretty
 
 If no arguments are provided, the CLI returns a JSON error payload. Interactive prompts are intentionally avoided to keep behavior predictable in automated environments.
 
+### Advanced examples
+
+#### Fetch multiple stations
+
+```bash
+montreal-aqi --station 1,2,3 --pretty
+```
+
+#### Suppress output (for scripts)
+
+```bash
+montreal-aqi --station 80 --quiet
+# No output if successful, useful for cron jobs
+```
+
+#### Verbose logging
+
+```bash
+montreal-aqi --station 80 --verbose
+# Shows detailed logs including API request times and cache status
+```
+
+#### Combine options
+
+```bash
+montreal-aqi --list --pretty --verbose
+```
+
 ---
 
 ## Integrations

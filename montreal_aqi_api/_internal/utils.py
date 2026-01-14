@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.metadata
 import logging
 import tomllib
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -28,6 +29,7 @@ def _read_version_from_pyproject(pyproject: Path) -> str | None:
     return None
 
 
+@lru_cache(maxsize=1)
 def get_version() -> str:
     logger.debug("Resolving package version")
 

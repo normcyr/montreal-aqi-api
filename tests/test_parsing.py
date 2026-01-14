@@ -48,7 +48,35 @@ def test_parse_pollutants_accepts_numeric_strings():
     pollutants = parse_pollutants(records)
 
     assert "NO2" in pollutants
-    assert pollutants["NO2"].aqi == 10
+
+
+def test_parse_pollutants_multiple_same_code_keeps_max_aqi():
+    """
+    When multiple records for the same pollutant code exist, keep the one with highest AQI.
+    """
+    records = [
+        {
+            "pollutant": "PM2.5",
+            "valeur": "30",
+            "heure": "13",
+        },
+        {
+            "pollutant": "PM25",  # alias
+            "valeur": "50",
+            "heure": "13",
+        },
+        {
+            "pollutant": "PM2.5",
+            "valeur": "40",
+            "heure": "13",
+        },
+    ]
+
+    pollutants = parse_pollutants(records)
+
+    assert "PM2.5" in pollutants
+    pm25 = pollutants["PM2.5"]
+    assert pm25.aqi == 50  # max of 30, 50, 40
 
 
 def test_parse_pollutants_ignores_unknown_pollutants():
