@@ -57,7 +57,11 @@ class _FakeStation:
                 code: {
                     "name": p.name,
                     "aqi": round(p.aqi),
-                    **({"concentration": p.concentration} if p.concentration is not None else {}),
+                    **(
+                        {"concentration": p.concentration}
+                        if p.concentration is not None
+                        else {}
+                    ),
                 }
                 for code, p in self.pollutants.items()
             },

@@ -4,10 +4,9 @@ Tests for internal utilities module (utils.py)
 
 import importlib.metadata
 from pathlib import Path
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 import tempfile
 
-import pytest
 
 from montreal_aqi_api._internal.utils import get_version, _read_version_from_pyproject
 
@@ -163,7 +162,9 @@ def test_get_version_from_pyproject(mock_read_version, mock_path_class):
 @patch("montreal_aqi_api._internal.utils.Path")
 @patch("montreal_aqi_api._internal.utils._read_version_from_pyproject")
 @patch("montreal_aqi_api._internal.utils.importlib.metadata.version")
-def test_get_version_from_package_metadata(mock_pkg_version, mock_read_version, mock_path_class):
+def test_get_version_from_package_metadata(
+    mock_pkg_version, mock_read_version, mock_path_class
+):
     """Test that get_version falls back to package metadata."""
     get_version.cache_clear()
 
@@ -188,7 +189,9 @@ def test_get_version_from_package_metadata(mock_pkg_version, mock_read_version, 
 @patch("montreal_aqi_api._internal.utils.Path")
 @patch("montreal_aqi_api._internal.utils._read_version_from_pyproject")
 @patch("montreal_aqi_api._internal.utils.importlib.metadata.version")
-def test_get_version_fallback_to_default(mock_pkg_version, mock_read_version, mock_path_class):
+def test_get_version_fallback_to_default(
+    mock_pkg_version, mock_read_version, mock_path_class
+):
     """Test that get_version uses fallback version when package metadata not found."""
     get_version.cache_clear()
 
@@ -211,7 +214,9 @@ def test_get_version_fallback_to_default(mock_pkg_version, mock_read_version, mo
 
 @patch("montreal_aqi_api._internal.utils.Path")
 @patch("montreal_aqi_api._internal.utils._read_version_from_pyproject")
-def test_get_version_skips_directories_without_pyproject(mock_read_version, mock_path_class):
+def test_get_version_skips_directories_without_pyproject(
+    mock_read_version, mock_path_class
+):
     """Test that get_version skips directories without pyproject.toml."""
     get_version.cache_clear()
 

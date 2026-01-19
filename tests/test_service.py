@@ -2,11 +2,15 @@
 Tests for service module (get_station_aqi, list_open_stations)
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 
-from montreal_aqi_api.service import get_station_aqi, list_open_stations, _parse_station_metadata
+from montreal_aqi_api.service import (
+    get_station_aqi,
+    list_open_stations,
+    _parse_station_metadata,
+)
 from montreal_aqi_api.exceptions import APIServerUnreachable
 
 
@@ -230,7 +234,11 @@ def test_get_station_aqi_timestamp_timezone(mock_fetch):
 
     assert station is not None
     # Check that timestamp contains timezone info
-    assert "America/Toronto" in station.timestamp or "-04:00" in station.timestamp or "-05:00" in station.timestamp
+    assert (
+        "America/Toronto" in station.timestamp
+        or "-04:00" in station.timestamp
+        or "-05:00" in station.timestamp
+    )
 
 
 @patch("montreal_aqi_api.service.fetch_latest_station_records")
@@ -251,8 +259,18 @@ def test_get_station_aqi_api_unreachable(mock_fetch):
 def test_list_open_stations(mock_fetch):
     """Test list_open_stations returns stations list."""
     expected_stations = [
-        {"station_id": "1", "name": "Station A", "address": "123 Rue", "borough": "Downtown"},
-        {"station_id": "2", "name": "Station B", "address": "456 Ave", "borough": "North"},
+        {
+            "station_id": "1",
+            "name": "Station A",
+            "address": "123 Rue",
+            "borough": "Downtown",
+        },
+        {
+            "station_id": "2",
+            "name": "Station B",
+            "address": "456 Ave",
+            "borough": "North",
+        },
     ]
     mock_fetch.return_value = expected_stations
 

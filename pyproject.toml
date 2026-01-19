@@ -39,6 +39,8 @@ dev = [
     "types-requests",
     "jsonschema",
     "types-jsonschema",
+    "bandit",
+    "mypy",
 ]
 
 [project.urls]
