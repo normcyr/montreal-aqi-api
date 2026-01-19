@@ -159,16 +159,12 @@ def test_fetch_handles_http_error(mock_get):
 
 
 @patch("montreal_aqi_api.api.requests.get")
-def test_fetch_retry_loop_else_clause(mock_get):
+def test_fetch_retries_and_succeeds_after_failures(mock_get):
     """
-    Test the else clause of the retry loop (edge case: should not happen normally).
-    This covers the defensive 'else' block after the for loop with MAX_RETRIES.
+    Test retry behavior with successful response after initial failures.
+    Verifies that _fetch will retry on connection errors and timeouts,
+    and eventually succeed when a valid response is received.
     """
-    # Make the first MAX_RETRIES-1 calls succeed in raising, then break out of loop
-    # Actually, this is hard to trigger because the loop always either breaks or raises.
-    # We'll test a different edge case: verify retry behavior with successful response
-    # after initial failures
-
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_response.json.return_value = {"result": {"records": [{"id": 1}]}}
