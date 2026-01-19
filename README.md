@@ -1,7 +1,7 @@
 # AQI monitoring for the city of Montréal (Québec, Canada)
 
 ![Latest Release](https://img.shields.io/github/v/release/normcyr/montreal-aqi-api?label=version)
-![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
 [![CI](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml/badge.svg)](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml)
 [![Test Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](tests)
 ![PyPI](https://img.shields.io/pypi/v/montreal-aqi-api)
