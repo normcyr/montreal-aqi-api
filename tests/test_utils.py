@@ -102,7 +102,7 @@ def test_read_version_from_pyproject_malformed_toml():
 
 def test_read_version_from_pyproject_file_not_found():
     """Test reading version from non-existent file."""
-    non_existent = Path("/tmp/non_existent_pyproject_12345.toml")
+    non_existent = Path(tempfile.gettempdir()) / "non_existent_pyproject_12345.toml"
     version = _read_version_from_pyproject(non_existent)
     assert version is None
 
