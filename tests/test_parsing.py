@@ -128,3 +128,91 @@ def test_parse_pollutants_normalizes_aliases():
 
     assert "PM2.5" in pollutants
     assert pollutants["PM2.5"].aqi == 40
+
+
+def test_parse_pollutants_skips_invalid_field_types():
+    """
+    Records with invalid field types (non-string names, non-numeric reference) are skipped.
+    """
+    from unittest.mock import patch
+
+    records = [
+        {
+            "pollutant": "PM2.5",
+            "valeur": "40",
+            "heure": "12",
+        },
+    ]
+
+    # Mock REFERENCE_VALUES to return invalid types for one pollutant
+    with patch("montreal_aqi_api._internal.parsing.REFERENCE_VALUES") as mock_ref:
+        mock_ref.get.side_effect = lambda code: {
+            "PM2.5": {
+                "fullname": 123,  # Invalid: should be string
+                "ref": 45.0,
+                "unit": "µg/m³",
+            }
+        }.get(code)
+
+        from montreal_aqi_api._internal.parsing import parse_pollutants
+
+        pollutants = parse_pollutants(records)
+
+        # Should skip due to invalid fullname type
+        assert "PM2.5" not in pollutants
+
+
+def test_parse_pollutants_skips_invalid_reference_type():
+    """Test that pollutants with non-numeric reference are skipped."""
+    from unittest.mock import patch
+
+    records = [
+        {
+            "pollutant": "O3",
+            "valeur": "30",
+        },
+    ]
+
+    with patch("montreal_aqi_api._internal.parsing.REFERENCE_VALUES") as mock_ref:
+        mock_ref.get.side_effect = lambda code: {
+            "O3": {
+                "fullname": "Ozone",
+                "ref": "not_a_number",  # Invalid: should be int/float
+                "unit": "µg/m³",
+            }
+        }.get(code)
+
+        from montreal_aqi_api._internal.parsing import parse_pollutants
+
+        pollutants = parse_pollutants(records)
+
+        # Should skip due to invalid reference type
+        assert "O3" not in pollutants
+
+
+def test_parse_pollutants_skips_invalid_unit_type():
+    """Test that pollutants with non-string unit are skipped."""
+    from unittest.mock import patch
+
+    records = [
+        {
+            "pollutant": "NO2",
+            "valeur": "20",
+        },
+    ]
+
+    with patch("montreal_aqi_api._internal.parsing.REFERENCE_VALUES") as mock_ref:
+        mock_ref.get.side_effect = lambda code: {
+            "NO2": {
+                "fullname": "Nitrogen Dioxide",
+                "ref": 88.0,
+                "unit": 123,  # Invalid: should be string
+            }
+        }.get(code)
+
+        from montreal_aqi_api._internal.parsing import parse_pollutants
+
+        pollutants = parse_pollutants(records)
+
+        # Should skip due to invalid unit type
+        assert "NO2" not in pollutants

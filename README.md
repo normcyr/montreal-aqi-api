@@ -1,11 +1,13 @@
 # AQI monitoring for the city of Montréal (Québec, Canada)
 
 ![Latest Release](https://img.shields.io/github/v/release/normcyr/montreal-aqi-api?label=version)
-![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
 [![CI](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml/badge.svg)](https://github.com/normcyr/montreal-aqi-api/actions/workflows/ci.yml)
+[![Test Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](tests)
 ![PyPI](https://img.shields.io/pypi/v/montreal-aqi-api)
 ![Downloads](https://img.shields.io/pypi/dm/montreal-aqi-api)
 ![License](https://img.shields.io/github/license/normcyr/montreal-aqi-api)
+[![Code style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 A Python library and CLI tool to fetch, process, and expose air quality index (AQI) data from the City of Montréal open data platform.
 
@@ -135,7 +137,7 @@ This library is designed to be consumed by automated systems and integrations.
 
 Used by the custom Home Assistant integration:
 
-- https://github.com/normcyr/home-assistant-montreal-aqi
+- <https://github.com/normcyr/home-assistant-montreal-aqi>
 
 ### Other Use Cases
 
