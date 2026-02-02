@@ -41,6 +41,7 @@ dev = [
     "types-jsonschema",
     "bandit",
     "mypy",
+    "prek",
 ]
 
 [project.urls]

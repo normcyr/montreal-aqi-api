@@ -21,20 +21,25 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[dev]
+        run: uv pip install -e .[dev]
 
       - name: Lint & format check (ruff)
         run: |
           ruff format --check .
           ruff check .
+
       - name: Type check (mypy)
         run: mypy montreal_aqi_api --ignore-missing-imports || true
+
       - name: Unit & contract tests (pytest)
         run: pytest tests --tb=short --disable-warnings
+
       - name: Test coverage
         run: pytest tests --cov=montreal_aqi_api --cov-report=term-missing --cov-fail-under=95
+
       - name: Security check (bandit)
         run: bandit -r montreal_aqi_api -q

@@ -59,6 +59,43 @@ source venv/bin/activate
 pip install .
 ```
 
+### Using uv (faster, recommended)
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv pip install montreal-aqi-api
+```
+
+---
+
+## Development
+
+### Setup Development Environment with uv
+
+```bash
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install project and dev dependencies
+uv pip install -e .[dev]
+```
+
+### Install Pre-commit Hooks (Prek)
+
+We use [Prek](https://github.com/j178/prek) for managing pre-commit hooks. See [PREK.md](PREK.md) for detailed setup instructions.
+
+Quick start:
+```bash
+# Install Prek
+brew install prek  # or: uv pip install prek
+
+# Set up git hooks
+prek install
+
+# Run hooks manually
+prek run
+```
+
 ---
 
 ## CLI Usage
