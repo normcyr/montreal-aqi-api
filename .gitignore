@@ -38,6 +38,7 @@ htmlcov/
 .tox/
 .nox/
 .pytest_cache/
+.mypy_cache/
 
 # ruff
 .ruff_cache/
@@ -51,5 +52,14 @@ Thumbs.db
 
 custom_components_test/
 
+# Documentation files (generated documentation, not source)
 commit_notes.md
-output_tests.log 
+API_OPTIMIZATIONS_ADVANCED.md
+API_STATUS.md
+CHANGES_SUMMARY.md
+CKAN_API_EXTENSION_GUIDE.md
+CKAN_API_IMPROVEMENTS.md
+DISTINCT_OPTIMIZATION.md
+FIELDS_OPTIMIZATION_COMPLETE.md
+IMPROVEMENTS_SUMMARY.md
+output_tests.log

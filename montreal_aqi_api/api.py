@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import time
 from typing import Any, Dict, List, Union
@@ -20,7 +21,7 @@ from montreal_aqi_api.exceptions import APIInvalidResponse, APIServerUnreachable
 
 logger = logging.getLogger(__name__)
 
-Params = Dict[str, Union[str, int, float]]
+Params = Dict[str, Union[str, int, float, bool]]
 
 # Simple in-memory cache: resource_id -> (timestamp, records)
 _api_cache: Dict[str, tuple[float, List[Dict[str, Any]]]] = {}
@@ -31,12 +32,29 @@ cache_hits = 0
 cache_misses = 0
 
 
-def _fetch(resource_id: str) -> List[Dict[str, Any]]:
+def _fetch(
+    resource_id: str,
+    filters: Dict[str, Any] | None = None,
+    sort: str | None = None,
+    distinct: bool = True,
+    fields: List[str] | None = None,
+) -> List[Dict[str, Any]]:
     global total_api_requests, cache_hits, cache_misses
 
+    # Create a cache key that includes filters, sort, distinct, and fields
+    cache_key = resource_id
+    if filters or sort or distinct or fields:
+        cache_params = {
+            "filters": filters,
+            "sort": sort,
+            "distinct": distinct,
+            "fields": fields,
+        }
+        cache_key = f"{resource_id}:{str(sorted(cache_params.items()))}"
+
     now = time.time()
-    if resource_id in _api_cache:
-        cached_time, cached_records = _api_cache[resource_id]
+    if cache_key in _api_cache:
+        cached_time, cached_records = _api_cache[cache_key]
         if now - cached_time < CACHE_TTL_SECONDS:
             logger.debug("Using cached data for resource_id=%s", resource_id)
             cache_hits += 1
@@ -56,6 +74,14 @@ def _fetch(resource_id: str) -> List[Dict[str, Any]]:
         "resource_id": resource_id,
         "limit": API_REQUEST_LIMIT,
     }
+    if filters:
+        params["filters"] = json.dumps(filters)
+    if sort:
+        params["sort"] = sort
+    if distinct:
+        params["distinct"] = distinct
+    if fields:
+        params["fields"] = ",".join(fields)
 
     last_exc = None
     for attempt in range(MAX_RETRIES):
@@ -101,7 +127,7 @@ def _fetch(resource_id: str) -> List[Dict[str, Any]]:
         raise APIInvalidResponse("Unexpected API response format")
 
     # Cache the result
-    _api_cache[resource_id] = (now, records)
+    _api_cache[cache_key] = (now, records)
 
     return records
 
@@ -119,27 +145,37 @@ def get_api_metrics() -> Dict[str, Union[int, float]]:
 def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
     """
     Return the latest available records for a given station ID.
-    """
-    records = _fetch(RESID_IQA_PAR_STATION_EN_TEMPS_REEL)
 
-    station_records = [
-        r
-        for r in records
-        if isinstance(r.get("stationId"), str) and r.get("stationId") == station_id
-    ]
-    if not station_records:
+    Uses server-side filtering by stationId and sorting by heure (descending)
+    to fetch only the most recent data efficiently. Also specifies required
+    fields to minimize data transfer.
+    """
+    # Columns needed for station AQI data
+    fields = ["stationId", "date", "heure", "polluant", "indice"]
+
+    # Use server-side filtering and sorting to fetch only data for this station
+    filters = {"stationId": station_id}
+    sort = "heure desc"  # Sort by hour, descending (newest first)
+    records = _fetch(
+        RESID_IQA_PAR_STATION_EN_TEMPS_REEL,
+        filters=filters,
+        sort=sort,
+        fields=fields,
+    )
+
+    if not records:
         logger.warning("No records found for station %s", station_id)
         return []
 
+    # After server-side sorting, the first record(s) should have the latest hour
     try:
-        latest_hour = max(int(r["heure"]) for r in station_records)
-    except (KeyError, ValueError, TypeError):
+        latest_hour = int(records[0]["heure"])
+    except (KeyError, ValueError, TypeError, IndexError):
         logger.warning("Invalid 'heure' field in station records for %s", station_id)
         return []
 
-    latest_records = [
-        r for r in station_records if int(r.get("heure", -1)) == latest_hour
-    ]
+    # Filter to get all records from the latest hour (there might be multiple)
+    latest_records = [r for r in records if int(r.get("heure", -1)) == latest_hour]
 
     logger.debug(
         "Found %d records for station %s at hour %s",
@@ -154,15 +190,21 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
 def fetch_open_stations() -> List[Dict[str, Any]]:
     """
     Return a list of currently open monitoring stations.
+
+    Uses server-side filtering by statut="ouvert" to fetch only open stations,
+    reducing the number of records processed client-side. Also specifies required
+    fields to minimize data transfer.
     """
-    records = _fetch(RESID_LIST)
+    # Columns needed for station list data
+    fields = ["numero_station", "nom", "adresse", "arrondissement_ville"]
+
+    # Use server-side filtering to fetch only open stations
+    filters = {"statut": "ouvert"}
+    records = _fetch(RESID_LIST, filters=filters, fields=fields)
 
     stations: List[Dict[str, Any]] = []
 
     for r in records:
-        if r.get("statut") != "ouvert":
-            continue
-
         stations.append(
             {
                 "station_id": r.get("numero_station"),

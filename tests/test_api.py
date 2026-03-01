@@ -219,16 +219,28 @@ def test_fetch_latest_station_records_no_matching_station(mock_get):
     """Test fetch_latest_station_records when no station matches."""
     _api_cache.clear()
 
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "result": {
-            "records": [
-                {"stationId": "1", "heure": "12"},
-                {"stationId": "2", "heure": "12"},
-            ]
-        }
-    }
-    mock_get.return_value = mock_response
+    def side_effect_func(*args, **kwargs):
+        """Mock function that returns empty list for non-matching station."""
+        params = kwargs.get("params", {})
+        if "filters" in params:
+            import json
+
+            filters = json.loads(params["filters"])
+            if filters.get("stationId") == "999":
+                return MagicMock(json=lambda: {"result": {"records": []}})
+        # Default response for other stations
+        return MagicMock(
+            json=lambda: {
+                "result": {
+                    "records": [
+                        {"stationId": "1", "heure": "12"},
+                        {"stationId": "2", "heure": "12"},
+                    ]
+                }
+            }
+        )
+
+    mock_get.side_effect = side_effect_func
 
     result = fetch_latest_station_records("999")
     assert result == []
@@ -241,16 +253,27 @@ def test_fetch_latest_station_records_invalid_hour(mock_get):
     """Test fetch_latest_station_records when 'heure' field is invalid."""
     _api_cache.clear()
 
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "result": {
-            "records": [
-                {"stationId": "1", "heure": "invalid"},
-                {"stationId": "1", "heure": "12"},
-            ]
-        }
-    }
-    mock_get.return_value = mock_response
+    def side_effect_func(*args, **kwargs):
+        """Mock function that returns data for station "1"."""
+        params = kwargs.get("params", {})
+        if "filters" in params:
+            import json
+
+            filters = json.loads(params["filters"])
+            if filters.get("stationId") == "1":
+                return MagicMock(
+                    json=lambda: {
+                        "result": {
+                            "records": [
+                                {"stationId": "1", "heure": "invalid"},
+                                {"stationId": "1", "heure": "12"},
+                            ]
+                        }
+                    }
+                )
+        return MagicMock(json=lambda: {"result": {"records": []}})
+
+    mock_get.side_effect = side_effect_func
 
     result = fetch_latest_station_records("1")
     assert isinstance(result, list)
@@ -263,15 +286,26 @@ def test_fetch_latest_station_records_missing_heure(mock_get):
     """Test fetch_latest_station_records when 'heure' field is missing."""
     _api_cache.clear()
 
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "result": {
-            "records": [
-                {"stationId": "1"},  # Missing heure
-            ]
-        }
-    }
-    mock_get.return_value = mock_response
+    def side_effect_func(*args, **kwargs):
+        """Mock function that returns data for station "1" without 'heure'."""
+        params = kwargs.get("params", {})
+        if "filters" in params:
+            import json
+
+            filters = json.loads(params["filters"])
+            if filters.get("stationId") == "1":
+                return MagicMock(
+                    json=lambda: {
+                        "result": {
+                            "records": [
+                                {"stationId": "1"},  # Missing heure
+                            ]
+                        }
+                    }
+                )
+        return MagicMock(json=lambda: {"result": {"records": []}})
+
+    mock_get.side_effect = side_effect_func
 
     result = fetch_latest_station_records("1")
     assert result == []
@@ -281,19 +315,30 @@ def test_fetch_latest_station_records_missing_heure(mock_get):
 
 @patch("montreal_aqi_api.api.requests.get")
 def test_fetch_latest_station_records_non_string_station_id(mock_get):
-    """Test that non-string stationId is filtered out."""
+    """Test that correct station filter is sent to API."""
     _api_cache.clear()
 
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "result": {
-            "records": [
-                {"stationId": 123, "heure": "12"},  # Not a string
-                {"stationId": "1", "heure": "12"},
-            ]
-        }
-    }
-    mock_get.return_value = mock_response
+    def side_effect_func(*args, **kwargs):
+        """Mock function that verifies the filter sent."""
+        params = kwargs.get("params", {})
+        if "filters" in params:
+            import json
+
+            filters = json.loads(params["filters"])
+            # Simulate that only records matching stationId="1" are returned
+            if filters.get("stationId") == "1":
+                return MagicMock(
+                    json=lambda: {
+                        "result": {
+                            "records": [
+                                {"stationId": "1", "heure": "12"},
+                            ]
+                        }
+                    }
+                )
+        return MagicMock(json=lambda: {"result": {"records": []}})
+
+    mock_get.side_effect = side_effect_func
 
     result = fetch_latest_station_records("1")
     assert len(result) == 1
@@ -307,18 +352,28 @@ def test_fetch_latest_station_records_multiple_hours(mock_get):
     """Test that only records from latest hour are returned."""
     _api_cache.clear()
 
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "result": {
-            "records": [
-                {"stationId": "1", "heure": "10", "value": "a"},
-                {"stationId": "1", "heure": "11", "value": "b"},
-                {"stationId": "1", "heure": "11", "value": "c"},
-                {"stationId": "1", "heure": "12", "value": "d"},
-            ]
-        }
-    }
-    mock_get.return_value = mock_response
+    def side_effect_func(*args, **kwargs):
+        """Mock function that simulates server-side sorting."""
+        params = kwargs.get("params", {})
+
+        # Always return sorted data (newest hour first) when sort="heure desc"
+        all_records = [
+            {"stationId": "1", "heure": "12", "value": "d"},
+            {"stationId": "1", "heure": "11", "value": "c"},
+            {"stationId": "1", "heure": "11", "value": "b"},
+            {"stationId": "1", "heure": "10", "value": "a"},
+        ]
+
+        if "filters" in params:
+            import json
+
+            filters = json.loads(params["filters"])
+            if filters.get("stationId") == "1":
+                return MagicMock(json=lambda: {"result": {"records": all_records}})
+
+        return MagicMock(json=lambda: {"result": {"records": []}})
+
+    mock_get.side_effect = side_effect_func
 
     result = fetch_latest_station_records("1")
     assert len(result) == 1
@@ -338,35 +393,48 @@ def test_fetch_open_stations_filters_non_open(mock_get):
     """Test that fetch_open_stations only returns 'ouvert' stations."""
     _api_cache.clear()
 
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "result": {
-            "records": [
-                {
-                    "numero_station": "1",
-                    "nom": "Station A",
-                    "adresse": "123 Rue",
-                    "arrondissement_ville": "Borough A",
-                    "statut": "ouvert",
-                },
-                {
-                    "numero_station": "2",
-                    "nom": "Station B",
-                    "adresse": "456 Rue",
-                    "arrondissement_ville": "Borough B",
-                    "statut": "fermé",
-                },
-                {
-                    "numero_station": "3",
-                    "nom": "Station C",
-                    "adresse": "789 Rue",
-                    "arrondissement_ville": "Borough C",
-                    "statut": "ouvert",
-                },
-            ]
-        }
-    }
-    mock_get.return_value = mock_response
+    def side_effect_func(*args, **kwargs):
+        """Mock function that simulates server-side filtering."""
+        params = kwargs.get("params", {})
+
+        # All stations available in the resource
+        all_stations = [
+            {
+                "numero_station": "1",
+                "nom": "Station A",
+                "adresse": "123 Rue",
+                "arrondissement_ville": "Borough A",
+                "statut": "ouvert",
+            },
+            {
+                "numero_station": "2",
+                "nom": "Station B",
+                "adresse": "456 Rue",
+                "arrondissement_ville": "Borough B",
+                "statut": "fermé",
+            },
+            {
+                "numero_station": "3",
+                "nom": "Station C",
+                "adresse": "789 Rue",
+                "arrondissement_ville": "Borough C",
+                "statut": "ouvert",
+            },
+        ]
+
+        # Filter by statut="ouvert" if filter is present
+        if "filters" in params:
+            import json
+
+            filters = json.loads(params["filters"])
+            if filters.get("statut") == "ouvert":
+                # Server-side filtering: return only open stations
+                filtered = [s for s in all_stations if s.get("statut") == "ouvert"]
+                return MagicMock(json=lambda: {"result": {"records": filtered}})
+
+        return MagicMock(json=lambda: {"result": {"records": all_stations}})
+
+    mock_get.side_effect = side_effect_func
 
     result = fetch_open_stations()
     assert len(result) == 2
