@@ -4,6 +4,7 @@ import json
 import logging
 import time
 from typing import Any, Dict, List, Union
+from urllib.parse import urlencode
 
 import requests
 
@@ -36,7 +37,7 @@ def _fetch(
     resource_id: str,
     filters: Dict[str, Any] | None = None,
     sort: str | None = None,
-    distinct: bool = True,
+    distinct: bool = False,
     fields: List[str] | None = None,
 ) -> List[Dict[str, Any]]:
     global total_api_requests, cache_hits, cache_misses
@@ -79,14 +80,32 @@ def _fetch(
     if sort:
         params["sort"] = sort
     if distinct:
-        params["distinct"] = distinct
+        params["distinct"] = str(distinct).lower()
+
+    # Build request params with repeated fields if specified
+    # CKAN API expects fields=col1&fields=col2&... (not comma-separated)
+    request_params: list[tuple[str, str]] = [(k, str(v)) for k, v in params.items()]
     if fields:
-        params["fields"] = ",".join(fields)
+        for field in fields:
+            request_params.append(("fields", field))
+
+    # Log the complete request URL and parameters
+    query_string = urlencode(request_params)
+    complete_url = f"{API_URL}?{query_string}"
+    logger.debug("Request URL: %s", complete_url)
+    if fields:
+        logger.debug("Selected fields: %s", ", ".join(fields))
+    if filters:
+        logger.debug("Filters: %s", filters)
+    if sort:
+        logger.debug("Sort: %s", sort)
 
     last_exc = None
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.get(API_URL, params=params, timeout=API_TIMEOUT_SECONDS)
+            response = requests.get(
+                API_URL, params=request_params, timeout=API_TIMEOUT_SECONDS
+            )
             response.raise_for_status()
             break  # Success, exit retry loop
         except requests.exceptions.RequestException as exc:
@@ -147,11 +166,11 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
     Return the latest available records for a given station ID.
 
     Uses server-side filtering by stationId and sorting by heure (descending)
-    to fetch only the most recent data efficiently. Also specifies required
+    to fetch only the most recent data efficiently. Also selects only required
     fields to minimize data transfer.
     """
     # Columns needed for station AQI data
-    fields = ["stationId", "date", "heure", "polluant", "indice"]
+    fields = ["stationId", "date", "heure", "pollutant", "valeur"]
 
     # Use server-side filtering and sorting to fetch only data for this station
     filters = {"stationId": station_id}
@@ -192,7 +211,7 @@ def fetch_open_stations() -> List[Dict[str, Any]]:
     Return a list of currently open monitoring stations.
 
     Uses server-side filtering by statut="ouvert" to fetch only open stations,
-    reducing the number of records processed client-side. Also specifies required
+    reducing the number of records processed client-side. Also selects only required
     fields to minimize data transfer.
     """
     # Columns needed for station list data

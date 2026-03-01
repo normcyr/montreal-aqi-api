@@ -15,6 +15,26 @@ from montreal_aqi_api.config import CACHE_TTL_SECONDS
 
 
 # ============================================================================
+# Helper Functions
+# ============================================================================
+
+
+def _normalize_params(params):
+    """Convert list of tuples to dict, handling repeated keys (like fields)."""
+    if isinstance(params, list):
+        params_dict = {}
+        for key, value in params:
+            if key in params_dict and isinstance(params_dict[key], list):
+                params_dict[key].append(value)
+            elif key in params_dict:
+                params_dict[key] = [params_dict[key], value]
+            else:
+                params_dict[key] = value
+        return params_dict
+    return params
+
+
+# ============================================================================
 # Error Handling Tests
 # ============================================================================
 
@@ -221,7 +241,7 @@ def test_fetch_latest_station_records_no_matching_station(mock_get):
 
     def side_effect_func(*args, **kwargs):
         """Mock function that returns empty list for non-matching station."""
-        params = kwargs.get("params", {})
+        params = _normalize_params(kwargs.get("params", {}))
         if "filters" in params:
             import json
 
@@ -255,7 +275,7 @@ def test_fetch_latest_station_records_invalid_hour(mock_get):
 
     def side_effect_func(*args, **kwargs):
         """Mock function that returns data for station "1"."""
-        params = kwargs.get("params", {})
+        params = _normalize_params(kwargs.get("params", {}))
         if "filters" in params:
             import json
 
@@ -288,7 +308,7 @@ def test_fetch_latest_station_records_missing_heure(mock_get):
 
     def side_effect_func(*args, **kwargs):
         """Mock function that returns data for station "1" without 'heure'."""
-        params = kwargs.get("params", {})
+        params = _normalize_params(kwargs.get("params", {}))
         if "filters" in params:
             import json
 
@@ -320,7 +340,7 @@ def test_fetch_latest_station_records_non_string_station_id(mock_get):
 
     def side_effect_func(*args, **kwargs):
         """Mock function that verifies the filter sent."""
-        params = kwargs.get("params", {})
+        params = _normalize_params(kwargs.get("params", {}))
         if "filters" in params:
             import json
 
@@ -354,7 +374,7 @@ def test_fetch_latest_station_records_multiple_hours(mock_get):
 
     def side_effect_func(*args, **kwargs):
         """Mock function that simulates server-side sorting."""
-        params = kwargs.get("params", {})
+        params = _normalize_params(kwargs.get("params", {}))
 
         # Always return sorted data (newest hour first) when sort="heure desc"
         all_records = [
@@ -395,7 +415,7 @@ def test_fetch_open_stations_filters_non_open(mock_get):
 
     def side_effect_func(*args, **kwargs):
         """Mock function that simulates server-side filtering."""
-        params = kwargs.get("params", {})
+        params = _normalize_params(kwargs.get("params", {}))
 
         # All stations available in the resource
         all_stations = [
