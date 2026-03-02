@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict
 
 from montreal_aqi_api.pollutants import Pollutant
@@ -13,14 +13,28 @@ class Station:
     hour: int
     timestamp: str
     pollutants: Dict[str, Pollutant]
+    _aqi: int = field(init=False, repr=False)
+    _main_pollutant: str = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        """Calculate cached values once during initialization."""
+        # Use object.__setattr__ to work with frozen/slots dataclasses
+        object.__setattr__(self, "_aqi", max(p.aqi for p in self.pollutants.values()))
+        object.__setattr__(
+            self,
+            "_main_pollutant",
+            max(self.pollutants.items(), key=lambda item: item[1].aqi)[0],
+        )
 
     @property
     def aqi(self) -> int:
-        return max(p.aqi for p in self.pollutants.values())
+        """Return cached AQI value."""
+        return self._aqi
 
     @property
     def main_pollutant(self) -> str:
-        return max(self.pollutants.items(), key=lambda item: item[1].aqi)[0]
+        """Return cached main pollutant."""
+        return self._main_pollutant
 
     def to_dict(self) -> dict[str, object]:
         return {
