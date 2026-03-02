@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections import OrderedDict
 from typing import Any, Dict, List, Union
 from urllib.parse import urlencode
 
@@ -24,8 +25,10 @@ logger = logging.getLogger(__name__)
 
 Params = Dict[str, Union[str, int, float, bool]]
 
-# Simple in-memory cache: resource_id -> (timestamp, records)
-_api_cache: Dict[str, tuple[float, List[Dict[str, Any]]]] = {}
+# In-memory cache with size limit (FIFO eviction)
+# Using OrderedDict to maintain insertion order for cache eviction
+_api_cache: OrderedDict[str, tuple[float, List[Dict[str, Any]]]] = OrderedDict()
+_cache_max_size = 100  # Maximum number of cached queries
 
 # Metrics
 total_api_requests = 0
@@ -148,6 +151,13 @@ def _fetch(
     # Cache the result
     _api_cache[cache_key] = (now, records)
 
+    # Enforce cache size limit using FIFO eviction
+    # When cache exceeds max size, remove oldest entry (first inserted)
+    if len(_api_cache) > _cache_max_size:
+        oldest_key = next(iter(_api_cache))  # Get first key (oldest)
+        del _api_cache[oldest_key]
+        logger.debug("Cache size limit exceeded, evicted oldest entry: %s", oldest_key)
+
     return records
 
 
@@ -157,6 +167,8 @@ def get_api_metrics() -> Dict[str, Union[int, float]]:
         "total_api_requests": total_api_requests,
         "cache_hits": cache_hits,
         "cache_misses": cache_misses,
+        "cache_size": len(_api_cache),
+        "cache_max_size": _cache_max_size,
         "cache_hit_rate": cache_hits / max(1, cache_hits + cache_misses),
     }
 
