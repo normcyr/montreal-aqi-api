@@ -42,17 +42,19 @@ def _fetch(
     sort: str | None = None,
     distinct: bool = False,
     fields: List[str] | None = None,
+    offset: int = 0,
 ) -> List[Dict[str, Any]]:
     global total_api_requests, cache_hits, cache_misses
 
-    # Create a cache key that includes filters, sort, distinct, and fields
+    # Create a cache key that includes filters, sort, distinct, fields, and offset
     cache_key = resource_id
-    if filters or sort or distinct or fields:
+    if filters or sort or distinct or fields or offset:
         cache_params = {
             "filters": filters,
             "sort": sort,
             "distinct": distinct,
             "fields": fields,
+            "offset": offset,
         }
         cache_key = f"{resource_id}:{str(sorted(cache_params.items()))}"
 
@@ -84,6 +86,8 @@ def _fetch(
         params["sort"] = sort
     if distinct:
         params["distinct"] = str(distinct).lower()
+    if offset:
+        params["offset"] = offset
 
     # Build request params with repeated fields if specified
     # CKAN API expects fields=col1&fields=col2&... (not comma-separated)
@@ -102,6 +106,8 @@ def _fetch(
         logger.debug("Filters: %s", filters)
     if sort:
         logger.debug("Sort: %s", sort)
+    if offset:
+        logger.debug("Offset: %d", offset)
 
     last_exc = None
     for attempt in range(MAX_RETRIES):
