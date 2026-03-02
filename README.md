@@ -11,26 +11,34 @@
 
 A Python library and CLI tool to fetch, process, and expose air quality index (AQI) data from the City of Montréal open data platform.
 
-The project is designed to be:
+We designed this project to provide:
 
-- **scriptable** (JSON output by default)
-- **embeddable** as a Python library
-- suitable for **automation** (Home Assistant, cron jobs, data pipelines)
+- **scriptable** output (JSON by default)
+- **embeddable** components as a Python library
+- **automation-ready** tools (Home Assistant, cron jobs, data pipelines)
 
 ---
 
 ## Features
 
 - Fetches the latest air quality data from Montréal’s open data portal
-- Lists currently active air quality monitoring stations
-- Computes the AQI based on RSQA methodology
+- Lists active air quality monitoring stations
+- Computes the AQI based on RSQA
 - Estimates pollutant concentrations from reported AQI contributions¹
 - Exposes structured station and pollutant data via Python models
 - Outputs **machine-readable JSON** from the CLI
 - Structured logging with optional debug mode
 - Test suite covering core logic, JSON contract, and CLI behavior
 
-¹ Estimated concentrations are derived from rounded AQI values and should be treated as approximations.
+¹ Estimated concentrations come from rounded AQI values; treat them as approximations.
+
+### Performance & Optimization
+
+- **Intelligent caching** (TTL-based, max 100 entries)
+- **Batch requests** via `get_stations_aqi()` for parallel multi-station queries
+- **Server-side filtering, sorting, and column selection** (fields parameter)
+- **Pagination support** with offset parameter for large datasets
+- **Debug logging** includes full API URLs and request parameters
 
 ---
 
@@ -63,7 +71,7 @@ pip install .
 
 ## CLI Usage
 
-The CLI **always outputs JSON on stdout**. Logs and diagnostics are written to **stderr**.
+The CLI **always outputs JSON on stdout** and writes logs and diagnostics to **stderr**.
 
 ### Fetch AQI for a specific station
 
@@ -97,7 +105,7 @@ montreal-aqi --list --pretty
 
 ### No arguments
 
-If no arguments are provided, the CLI returns a JSON error payload. Interactive prompts are intentionally avoided to keep behavior predictable in automated environments.
+When you provide no arguments, the CLI returns a JSON error payload. We intentionally avoid interactive prompts to keep behavior predictable in automated environments.
 
 ### Advanced examples
 
@@ -131,7 +139,7 @@ montreal-aqi --list --pretty --verbose
 
 ## Integrations
 
-This library is designed to be consumed by automated systems and integrations.
+Use this library to integrate AQI monitoring with automated systems and workflows.
 
 ### Home Assistant
 
@@ -150,10 +158,10 @@ Used by the custom Home Assistant integration:
 
 ## JSON Contract — Version 1 (Frozen)
 
-As of **v0.4.0**, the JSON output contract is **explicitly versioned and frozen**. The output format is formally specified in:
+As of **v0.4.0**, we **explicitly versioned and froze** the JSON output contract. We formally specify the output format in:
 [docs/json_contract_v1.md](docs/json_contract_v1.md).
 
-The JSON output is governed by the official JSON Schema v1 and all payloads include:
+The official JSON Schema v1 governs the JSON output, and all payloads include:
 
 ```json
 {
@@ -221,6 +229,8 @@ The JSON output is governed by the official JSON Schema v1 and all payloads incl
 
 ## Python Usage
 
+### Fetch AQI for a single station
+
 ```python
 from montreal_aqi_api.service import get_station_aqi
 
@@ -229,8 +239,30 @@ if station:
     print(station.to_dict())
 ```
 
-Domain objects (`Station`, `Pollutant`) expose explicit serialization helpers
-to ease downstream usage.
+### Fetch AQI for multiple stations (parallel requests)
+
+For better performance when fetching data for multiple stations, use `get_stations_aqi()`:
+
+```python
+from montreal_aqi_api.service import get_stations_aqi
+
+# Fetch AQI for multiple stations concurrently (default: 5 workers)
+stations = get_stations_aqi(["1", "3", "5", "80"])
+
+for station in stations:
+    if station:
+        print(f"Station {station.station_id}: AQI={station.aqi}")
+    else:
+        print("Failed to fetch data")
+```
+
+Domain objects (`Station`, `Pollutant`) expose explicit serialization helpers:
+
+```python
+station = get_station_aqi("80")
+data = station.to_dict()  # Returns fully serialized JSON-compatible dict
+print(data["pollutants"]["PM2.5"])  # Access individual pollutants
+```
 
 ---
 
@@ -242,12 +274,12 @@ The `montreal-aqi` CLI exits with explicit status codes to make it suitable for 
 |----------:|--------|-------------|
 | `0` | Success | Command executed successfully |
 | `1` | Generic API error | An unexpected internal API error occurred |
-| `2` | API unreachable | Montreal Open Data API could not be reached (network error, timeout, DNS, etc.) |
+| `2` | API unreachable | The CLI could not reach the Montreal Open Data API (network error, timeout, DNS, etc.) |
 | `3` | Invalid API response | API returned malformed or unexpected JSON payload |
 
 ### Details
 
-- All errors are reported **both** via:
+- The CLI reports all errors **both** via:
   - a structured JSON error payload on `stdout`
   - a non-zero process exit code
 - This ensures compatibility with:
@@ -308,8 +340,8 @@ Please ensure that:
 
 - tests pass (`pytest`)
 - the JSON contract remains backward compatible
-- any change affecting output is covered by tests
-- code is linted/formatted with `ruff` (run `ruff format --check .` and `ruff check .`)
+- tests cover any change affecting output
+- lint and format code with `ruff` (run `ruff format --check .` and `ruff check .`)
 
 Open an issue before proposing breaking changes.
 
@@ -317,11 +349,11 @@ Open an issue before proposing breaking changes.
 
 ## Data Source
 
-Data is retrieved from the
+Data retrieved from the
 [Ville de Montréal Open Data Portal](https://donnees.montreal.ca/fr/dataset/rsqa-indice-qualite-air).
 
 ---
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+We license this project under the [MIT License](LICENSE).
