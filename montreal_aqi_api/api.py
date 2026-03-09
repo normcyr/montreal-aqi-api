@@ -10,7 +10,6 @@ from urllib.parse import urlencode
 import requests
 
 from montreal_aqi_api.config import (
-    API_REQUEST_LIMIT,
     API_TIMEOUT_SECONDS,
     API_URL,
     CACHE_TTL_SECONDS,
@@ -78,7 +77,6 @@ def _fetch(
     start_time = time.time()
     params: Params = {
         "resource_id": resource_id,
-        "limit": API_REQUEST_LIMIT,
     }
     if filters:
         params["filters"] = json.dumps(filters)
@@ -183,20 +181,20 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
     """
     Return the latest available records for a given station ID.
 
-    Uses server-side filtering by stationId and sorting by heure (descending)
-    to fetch only the most recent data efficiently. Also selects only required
-    fields to minimize data transfer.
+    Uses server-side filtering by stationId to fetch data for this station,
+    then sorts by heure (as integer) client-side to get the most recent hour.
+    Also selects only required fields to minimize data transfer.
     """
     # Columns needed for station AQI data
     fields = ["stationId", "date", "heure", "pollutant", "valeur"]
 
-    # Use server-side filtering and sorting to fetch only data for this station
+    # Use server-side filtering to fetch only data for this station
+    # Note: Not using server-side sort because 'heure' is returned as text,
+    # which causes alphabetic sorting instead of numeric sorting
     filters = {"stationId": station_id}
-    sort = "heure desc"  # Sort by hour, descending (newest first)
     records = _fetch(
         RESID_IQA_PAR_STATION_EN_TEMPS_REEL,
         filters=filters,
-        sort=sort,
         fields=fields,
     )
 
@@ -204,15 +202,23 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
         logger.warning("No records found for station %s", station_id)
         return []
 
-    # After server-side sorting, the first record(s) should have the latest hour
+    # Sort records by hour (as integer) in descending order client-side
+    # to get the most recent data
     try:
-        latest_hour = int(records[0]["heure"])
+        records_sorted = sorted(
+            records,
+            key=lambda r: int(r.get("heure", -1)),
+            reverse=True,
+        )
+        latest_hour = int(records_sorted[0]["heure"])
     except (KeyError, ValueError, TypeError, IndexError):
         logger.warning("Invalid 'heure' field in station records for %s", station_id)
         return []
 
     # Filter to get all records from the latest hour (there might be multiple)
-    latest_records = [r for r in records if int(r.get("heure", -1)) == latest_hour]
+    latest_records = [
+        r for r in records_sorted if int(r.get("heure", -1)) == latest_hour
+    ]
 
     logger.debug(
         "Found %d records for station %s at hour %s",
