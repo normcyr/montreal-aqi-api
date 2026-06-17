@@ -39,7 +39,7 @@ def _normalize_params(params):
 # ============================================================================
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_api_unreachable_raises(mock_get):
     mock_get.side_effect = requests.exceptions.ConnectionError()
 
@@ -47,7 +47,7 @@ def test_api_unreachable_raises(mock_get):
         fetch_latest_station_records("3")
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_invalid_json_response_raises(mock_get):
     mock_response = mock_get.return_value
     mock_response.raise_for_status.return_value = None
@@ -57,7 +57,7 @@ def test_invalid_json_response_raises(mock_get):
         fetch_latest_station_records("3")
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_unexpected_payload_format_raises(mock_get):
     mock_response = mock_get.return_value
     mock_response.raise_for_status.return_value = None
@@ -67,7 +67,7 @@ def test_unexpected_payload_format_raises(mock_get):
         fetch_latest_station_records("3")
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_records_not_list_raises(mock_get):
     mock_response = mock_get.return_value
     mock_response.raise_for_status.return_value = None
@@ -82,7 +82,7 @@ def test_records_not_list_raises(mock_get):
 # ============================================================================
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_uses_cache_when_valid(mock_get):
     """Test that _fetch returns cached data when cache is still valid."""
     _api_cache.clear()
@@ -106,7 +106,7 @@ def test_fetch_uses_cache_when_valid(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 @patch("montreal_aqi_api.api.time.time")
 def test_fetch_expires_cache_after_ttl(mock_time, mock_get):
     """Test that _fetch refreshes data when cache expires."""
@@ -137,7 +137,7 @@ def test_fetch_expires_cache_after_ttl(mock_time, mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_get_api_metrics(mock_get):
     """Test that metrics are correctly computed."""
     _api_cache.clear()
@@ -169,7 +169,7 @@ def test_get_api_metrics(mock_get):
     api.cache_misses = 0
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_handles_http_error(mock_get):
     """Test that fetch handles HTTP errors with retries."""
     mock_get.side_effect = requests.exceptions.HTTPError("404 Not Found")
@@ -178,7 +178,7 @@ def test_fetch_handles_http_error(mock_get):
         _fetch("test-resource")
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_retry_loop_else_clause(mock_get):
     """
     Test the else clause of the retry loop (edge case: should not happen normally).
@@ -205,7 +205,7 @@ def test_fetch_retry_loop_else_clause(mock_get):
     assert mock_get.call_count == 3
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 @patch("montreal_aqi_api.api.time.sleep")
 def test_fetch_retries_with_backoff(mock_sleep, mock_get):
     """Test that fetch respects retry backoff timing."""
@@ -234,7 +234,7 @@ def test_fetch_retries_with_backoff(mock_sleep, mock_get):
 # ============================================================================
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_latest_station_records_no_matching_station(mock_get):
     """Test fetch_latest_station_records when no station matches."""
     _api_cache.clear()
@@ -268,7 +268,7 @@ def test_fetch_latest_station_records_no_matching_station(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_latest_station_records_invalid_hour(mock_get):
     """Test fetch_latest_station_records when 'heure' field is invalid."""
     _api_cache.clear()
@@ -301,7 +301,7 @@ def test_fetch_latest_station_records_invalid_hour(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_latest_station_records_missing_heure(mock_get):
     """Test fetch_latest_station_records when 'heure' field is missing."""
     _api_cache.clear()
@@ -333,7 +333,7 @@ def test_fetch_latest_station_records_missing_heure(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_latest_station_records_non_string_station_id(mock_get):
     """Test that correct station filter is sent to API."""
     _api_cache.clear()
@@ -367,7 +367,7 @@ def test_fetch_latest_station_records_non_string_station_id(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_latest_station_records_multiple_hours(mock_get):
     """Test that only records from latest hour are returned."""
     _api_cache.clear()
@@ -408,7 +408,7 @@ def test_fetch_latest_station_records_multiple_hours(mock_get):
 # ============================================================================
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_open_stations_filters_non_open(mock_get):
     """Test that fetch_open_stations only returns 'ouvert' stations."""
     _api_cache.clear()
@@ -463,7 +463,7 @@ def test_fetch_open_stations_filters_non_open(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests.get")
+@patch("montreal_aqi_api.api.requests_session.get")
 def test_fetch_open_stations_handles_missing_fields(mock_get):
     """Test that fetch_open_stations handles missing fields gracefully."""
     _api_cache.clear()
