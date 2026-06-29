@@ -17,6 +17,7 @@ from montreal_aqi_api.config import (
     RETRY_BACKOFF_SECONDS,
     RESID_IQA_PAR_STATION_EN_TEMPS_REEL,
     RESID_LIST,
+    USER_AGENT,
 )
 from montreal_aqi_api.exceptions import APIInvalidResponse, APIServerUnreachable
 
@@ -33,6 +34,11 @@ _cache_max_size = 100  # Maximum number of cached queries
 total_api_requests = 0
 cache_hits = 0
 cache_misses = 0
+
+# Configure a requests session for all queries
+# Use the UA configured in config instead of python-request's own
+requests_session = requests.Session()
+requests_session.headers.update({"User-Agent": USER_AGENT})
 
 
 def _fetch(
@@ -110,7 +116,7 @@ def _fetch(
     last_exc = None
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.get(
+            response = requests_session.get(
                 API_URL, params=request_params, timeout=API_TIMEOUT_SECONDS
             )
             response.raise_for_status()
