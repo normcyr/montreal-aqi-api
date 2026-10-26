@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict
 
 from montreal_aqi_api.pollutants import Pollutant
 
@@ -12,7 +11,7 @@ class Station:
     date: str
     hour: int
     timestamp: str
-    pollutants: Dict[str, Pollutant]
+    pollutants: dict[str, Pollutant]
     _aqi: int = field(init=False, repr=False)
     _main_pollutant: str = field(init=False, repr=False)
 

@@ -6,13 +6,12 @@ from unittest.mock import patch
 
 import pytest
 
-from montreal_aqi_api.cli import main, _error, _validate_station_id, _print_json
+from montreal_aqi_api.cli import _error, _print_json, _validate_station_id, main
 from montreal_aqi_api.exceptions import (
-    APIServerUnreachable,
     APIInvalidResponse,
+    APIServerUnreachable,
     MontrealAQIError,
 )
-
 
 # ============================================================================
 # Test Helpers

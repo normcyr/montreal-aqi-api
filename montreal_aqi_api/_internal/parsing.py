@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Iterable, Mapping
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 from montreal_aqi_api.config import POLLUTANT_ALIASES, REFERENCE_VALUES
 from montreal_aqi_api.pollutants import Pollutant
@@ -23,8 +24,8 @@ def normalize_pollutant_code(code: str) -> str:
 
 def parse_pollutants(
     raw_data: Iterable[Mapping[str, Any]],
-) -> Dict[str, Pollutant]:
-    pollutants: Dict[str, Pollutant] = {}
+) -> dict[str, Pollutant]:
+    pollutants: dict[str, Pollutant] = {}
 
     for record in raw_data:
         code_raw = _get_first(record, "polluant", "pollutant")

@@ -1,37 +1,26 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
 from montreal_aqi_api.api import (
+    _api_cache,
     _fetch,
-    get_api_metrics,
     fetch_latest_station_records,
     fetch_open_stations,
-    _api_cache,
+    get_api_metrics,
 )
+from montreal_aqi_api.config import API_REQUEST_LIMIT, CACHE_TTL_SECONDS
 from montreal_aqi_api.exceptions import APIInvalidResponse, APIServerUnreachable
-from montreal_aqi_api.config import CACHE_TTL_SECONDS
-
 
 # ============================================================================
 # Helper Functions
 # ============================================================================
 
 
-def _normalize_params(params):
-    """Convert list of tuples to dict, handling repeated keys (like fields)."""
-    if isinstance(params, list):
-        params_dict = {}
-        for key, value in params:
-            if key in params_dict and isinstance(params_dict[key], list):
-                params_dict[key].append(value)
-            elif key in params_dict:
-                params_dict[key] = [params_dict[key], value]
-            else:
-                params_dict[key] = value
-        return params_dict
-    return params
+def _request_filters(kwargs):
+    """Return the filters sent in the JSON body of a mocked POST request."""
+    return kwargs.get("json", {}).get("filters")
 
 
 # ============================================================================
@@ -39,7 +28,7 @@ def _normalize_params(params):
 # ============================================================================
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_api_unreachable_raises(mock_get):
     mock_get.side_effect = requests.exceptions.ConnectionError()
 
@@ -47,7 +36,7 @@ def test_api_unreachable_raises(mock_get):
         fetch_latest_station_records("3")
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_invalid_json_response_raises(mock_get):
     mock_response = mock_get.return_value
     mock_response.raise_for_status.return_value = None
@@ -57,7 +46,7 @@ def test_invalid_json_response_raises(mock_get):
         fetch_latest_station_records("3")
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_unexpected_payload_format_raises(mock_get):
     mock_response = mock_get.return_value
     mock_response.raise_for_status.return_value = None
@@ -67,7 +56,7 @@ def test_unexpected_payload_format_raises(mock_get):
         fetch_latest_station_records("3")
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_records_not_list_raises(mock_get):
     mock_response = mock_get.return_value
     mock_response.raise_for_status.return_value = None
@@ -82,7 +71,7 @@ def test_records_not_list_raises(mock_get):
 # ============================================================================
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_uses_cache_when_valid(mock_get):
     """Test that _fetch returns cached data when cache is still valid."""
     _api_cache.clear()
@@ -106,7 +95,7 @@ def test_fetch_uses_cache_when_valid(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 @patch("montreal_aqi_api.api.time.time")
 def test_fetch_expires_cache_after_ttl(mock_time, mock_get):
     """Test that _fetch refreshes data when cache expires."""
@@ -137,7 +126,7 @@ def test_fetch_expires_cache_after_ttl(mock_time, mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_get_api_metrics(mock_get):
     """Test that metrics are correctly computed."""
     _api_cache.clear()
@@ -169,7 +158,7 @@ def test_get_api_metrics(mock_get):
     api.cache_misses = 0
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_handles_http_error(mock_get):
     """Test that fetch handles HTTP errors with retries."""
     mock_get.side_effect = requests.exceptions.HTTPError("404 Not Found")
@@ -178,7 +167,7 @@ def test_fetch_handles_http_error(mock_get):
         _fetch("test-resource")
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_retry_loop_else_clause(mock_get):
     """
     Test the else clause of the retry loop (edge case: should not happen normally).
@@ -205,7 +194,7 @@ def test_fetch_retry_loop_else_clause(mock_get):
     assert mock_get.call_count == 3
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 @patch("montreal_aqi_api.api.time.sleep")
 def test_fetch_retries_with_backoff(mock_sleep, mock_get):
     """Test that fetch respects retry backoff timing."""
@@ -234,20 +223,16 @@ def test_fetch_retries_with_backoff(mock_sleep, mock_get):
 # ============================================================================
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_latest_station_records_no_matching_station(mock_get):
     """Test fetch_latest_station_records when no station matches."""
     _api_cache.clear()
 
     def side_effect_func(*args, **kwargs):
         """Mock function that returns empty list for non-matching station."""
-        params = _normalize_params(kwargs.get("params", {}))
-        if "filters" in params:
-            import json
-
-            filters = json.loads(params["filters"])
-            if filters.get("stationId") == "999":
-                return MagicMock(json=lambda: {"result": {"records": []}})
+        filters = _request_filters(kwargs)
+        if filters and filters.get("stationId") == "999":
+            return MagicMock(json=lambda: {"result": {"records": []}})
         # Default response for other stations
         return MagicMock(
             json=lambda: {
@@ -268,29 +253,25 @@ def test_fetch_latest_station_records_no_matching_station(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_latest_station_records_invalid_hour(mock_get):
     """Test fetch_latest_station_records when 'heure' field is invalid."""
     _api_cache.clear()
 
     def side_effect_func(*args, **kwargs):
         """Mock function that returns data for station "1"."""
-        params = _normalize_params(kwargs.get("params", {}))
-        if "filters" in params:
-            import json
-
-            filters = json.loads(params["filters"])
-            if filters.get("stationId") == "1":
-                return MagicMock(
-                    json=lambda: {
-                        "result": {
-                            "records": [
-                                {"stationId": "1", "heure": "invalid"},
-                                {"stationId": "1", "heure": "12"},
-                            ]
-                        }
+        filters = _request_filters(kwargs)
+        if filters and filters.get("stationId") == "1":
+            return MagicMock(
+                json=lambda: {
+                    "result": {
+                        "records": [
+                            {"stationId": "1", "heure": "invalid"},
+                            {"stationId": "1", "heure": "12"},
+                        ]
                     }
-                )
+                }
+            )
         return MagicMock(json=lambda: {"result": {"records": []}})
 
     mock_get.side_effect = side_effect_func
@@ -301,28 +282,24 @@ def test_fetch_latest_station_records_invalid_hour(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_latest_station_records_missing_heure(mock_get):
     """Test fetch_latest_station_records when 'heure' field is missing."""
     _api_cache.clear()
 
     def side_effect_func(*args, **kwargs):
         """Mock function that returns data for station "1" without 'heure'."""
-        params = _normalize_params(kwargs.get("params", {}))
-        if "filters" in params:
-            import json
-
-            filters = json.loads(params["filters"])
-            if filters.get("stationId") == "1":
-                return MagicMock(
-                    json=lambda: {
-                        "result": {
-                            "records": [
-                                {"stationId": "1"},  # Missing heure
-                            ]
-                        }
+        filters = _request_filters(kwargs)
+        if filters and filters.get("stationId") == "1":
+            return MagicMock(
+                json=lambda: {
+                    "result": {
+                        "records": [
+                            {"stationId": "1"},  # Missing heure
+                        ]
                     }
-                )
+                }
+            )
         return MagicMock(json=lambda: {"result": {"records": []}})
 
     mock_get.side_effect = side_effect_func
@@ -333,29 +310,25 @@ def test_fetch_latest_station_records_missing_heure(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_latest_station_records_non_string_station_id(mock_get):
     """Test that correct station filter is sent to API."""
     _api_cache.clear()
 
     def side_effect_func(*args, **kwargs):
         """Mock function that verifies the filter sent."""
-        params = _normalize_params(kwargs.get("params", {}))
-        if "filters" in params:
-            import json
-
-            filters = json.loads(params["filters"])
-            # Simulate that only records matching stationId="1" are returned
-            if filters.get("stationId") == "1":
-                return MagicMock(
-                    json=lambda: {
-                        "result": {
-                            "records": [
-                                {"stationId": "1", "heure": "12"},
-                            ]
-                        }
+        filters = _request_filters(kwargs)
+        # Simulate that only records matching stationId="1" are returned
+        if filters and filters.get("stationId") == "1":
+            return MagicMock(
+                json=lambda: {
+                    "result": {
+                        "records": [
+                            {"stationId": "1", "heure": "12"},
+                        ]
                     }
-                )
+                }
+            )
         return MagicMock(json=lambda: {"result": {"records": []}})
 
     mock_get.side_effect = side_effect_func
@@ -367,14 +340,47 @@ def test_fetch_latest_station_records_non_string_station_id(mock_get):
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
+def test_fetch_latest_station_records_discards_unfiltered_stations(mock_get):
+    """Ignore records from other stations if the API does not apply its filter."""
+    _api_cache.clear()
+    expected_record = {"stationId": "80", "heure": "7", "pollutant": "NO2"}
+    mock_get.return_value = MagicMock(
+        json=lambda: {
+            "result": {
+                "records": [
+                    {"stationId": "3", "heure": "23"},
+                    expected_record,
+                    {"stationId": "80", "heure": "6"},
+                ]
+            }
+        }
+    )
+
+    result = fetch_latest_station_records("80")
+
+    assert result == [expected_record]
+    body = mock_get.call_args.kwargs["json"]
+    assert body["filters"] == {"stationId": "80"}
+    assert body["limit"] == API_REQUEST_LIMIT
+    assert body["fields"] == [
+        "stationId",
+        "date",
+        "heure",
+        "pollutant",
+        "valeur",
+    ]
+    _api_cache.clear()
+
+
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_latest_station_records_multiple_hours(mock_get):
     """Test that only records from latest hour are returned."""
     _api_cache.clear()
 
     def side_effect_func(*args, **kwargs):
         """Mock function that simulates server-side sorting."""
-        params = _normalize_params(kwargs.get("params", {}))
+        filters = _request_filters(kwargs)
 
         # Always return sorted data (newest hour first) when sort="heure desc"
         all_records = [
@@ -384,12 +390,8 @@ def test_fetch_latest_station_records_multiple_hours(mock_get):
             {"stationId": "1", "heure": "10", "value": "a"},
         ]
 
-        if "filters" in params:
-            import json
-
-            filters = json.loads(params["filters"])
-            if filters.get("stationId") == "1":
-                return MagicMock(json=lambda: {"result": {"records": all_records}})
+        if filters and filters.get("stationId") == "1":
+            return MagicMock(json=lambda: {"result": {"records": all_records}})
 
         return MagicMock(json=lambda: {"result": {"records": []}})
 
@@ -408,14 +410,13 @@ def test_fetch_latest_station_records_multiple_hours(mock_get):
 # ============================================================================
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_open_stations_filters_non_open(mock_get):
     """Test that fetch_open_stations only returns 'ouvert' stations."""
     _api_cache.clear()
 
     def side_effect_func(*args, **kwargs):
         """Mock function that simulates server-side filtering."""
-        params = _normalize_params(kwargs.get("params", {}))
 
         # All stations available in the resource
         all_stations = [
@@ -442,16 +443,7 @@ def test_fetch_open_stations_filters_non_open(mock_get):
             },
         ]
 
-        # Filter by statut="ouvert" if filter is present
-        if "filters" in params:
-            import json
-
-            filters = json.loads(params["filters"])
-            if filters.get("statut") == "ouvert":
-                # Server-side filtering: return only open stations
-                filtered = [s for s in all_stations if s.get("statut") == "ouvert"]
-                return MagicMock(json=lambda: {"result": {"records": filtered}})
-
+        # Simulate the API ignoring its filter and returning all stations.
         return MagicMock(json=lambda: {"result": {"records": all_stations}})
 
     mock_get.side_effect = side_effect_func
@@ -459,11 +451,14 @@ def test_fetch_open_stations_filters_non_open(mock_get):
     result = fetch_open_stations()
     assert len(result) == 2
     assert all(s["name"] in ["Station A", "Station C"] for s in result)
+    body = mock_get.call_args.kwargs["json"]
+    assert body["filters"] == {"statut": "ouvert"}
+    assert "statut" in body["fields"]
 
     _api_cache.clear()
 
 
-@patch("montreal_aqi_api.api.requests_session.get")
+@patch("montreal_aqi_api.api.requests_session.post")
 def test_fetch_open_stations_handles_missing_fields(mock_get):
     """Test that fetch_open_stations handles missing fields gracefully."""
     _api_cache.clear()

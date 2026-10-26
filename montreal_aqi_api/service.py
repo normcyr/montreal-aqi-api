@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime
-from typing import Any, Mapping
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from montreal_aqi_api._internal.parsing import parse_pollutants
@@ -111,7 +112,7 @@ def get_stations_aqi(
             idx = future_to_index[future]
             try:
                 results[idx] = future.result()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - one failing station must not abort the batch
                 logger.warning(
                     "Failed to fetch AQI for station %s: %s", station_ids[idx], e
                 )

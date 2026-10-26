@@ -33,7 +33,7 @@ keywords = ["aqi", "air-quality", "montreal", "open-data"]
 
 [project.optional-dependencies]
 dev = [
-    "ruff",
+    "ruff==0.17.2",
     "pytest",
     "pytest-cov",
     "types-requests",

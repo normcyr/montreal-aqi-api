@@ -6,13 +6,13 @@ from unittest.mock import patch
 
 import pytest
 
-from montreal_aqi_api.service import (
-    get_station_aqi,
-    list_open_stations,
-    _parse_station_metadata,
-)
 from montreal_aqi_api.exceptions import APIServerUnreachable
-
+from montreal_aqi_api.service import (
+    _parse_station_metadata,
+    get_station_aqi,
+    get_stations_aqi,
+    list_open_stations,
+)
 
 # ============================================================================
 # Tests for _parse_station_metadata
@@ -297,3 +297,34 @@ def test_list_open_stations_api_unreachable(mock_fetch):
 
     with pytest.raises(APIServerUnreachable):
         list_open_stations()
+
+
+# ============================================================================
+# Tests for get_stations_aqi
+# ============================================================================
+
+
+@patch("montreal_aqi_api.service.get_station_aqi")
+def test_get_stations_aqi_preserves_input_order(mock_get):
+    """Results are returned in the same order as the requested station IDs."""
+    mock_get.side_effect = lambda station_id: f"station-{station_id}"
+
+    result = get_stations_aqi(["3", "80", "99"])
+
+    assert result == ["station-3", "station-80", "station-99"]
+
+
+@patch("montreal_aqi_api.service.get_station_aqi")
+def test_get_stations_aqi_failure_does_not_abort_batch(mock_get):
+    """A failing station yields None while the others are still returned."""
+
+    def fake(station_id):
+        if station_id == "80":
+            raise APIServerUnreachable("API down")
+        return f"station-{station_id}"
+
+    mock_get.side_effect = fake
+
+    result = get_stations_aqi(["3", "80", "99"])
+
+    assert result == ["station-3", None, "station-99"]

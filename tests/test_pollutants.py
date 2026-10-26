@@ -1,3 +1,7 @@
+from dataclasses import FrozenInstanceError
+
+import pytest
+
 from montreal_aqi_api.pollutants import Pollutant
 
 
@@ -24,11 +28,8 @@ def test_pollutant_is_immutable():
         concentration=192,
     )
 
-    try:
-        p.aqi = 80
-        assert False, "Pollutant should be immutable"
-    except Exception:
-        assert True
+    with pytest.raises(FrozenInstanceError):
+        p.aqi = 80  # type: ignore[misc]
 
 
 def test_pollutant_to_dict():

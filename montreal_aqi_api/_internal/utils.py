@@ -3,9 +3,10 @@ from __future__ import annotations
 import importlib.metadata
 import logging
 import tomllib
+from collections.abc import Mapping
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ def _read_version_from_pyproject(pyproject: Path) -> str | None:
         if isinstance(version, str):
             return version
 
-    except Exception as exc:  # defensive: malformed toml, permissions, etc.
+    except Exception as exc:  # noqa: BLE001 - defensive: malformed toml, permissions
         logger.debug("Failed to read version from %s: %s", pyproject, exc)
 
     return None

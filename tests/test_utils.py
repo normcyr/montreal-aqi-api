@@ -3,13 +3,11 @@ Tests for internal utilities module (utils.py)
 """
 
 import importlib.metadata
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-
-from montreal_aqi_api._internal.utils import get_version, _read_version_from_pyproject
-
+from montreal_aqi_api._internal.utils import _read_version_from_pyproject, get_version
 
 # ============================================================================
 # Tests for _read_version_from_pyproject

@@ -4,30 +4,30 @@ import json
 import logging
 import time
 from collections import OrderedDict
-from typing import Any, Dict, List, Union
-from urllib.parse import urlencode
+from typing import Any
 
 import requests
 
 from montreal_aqi_api.config import (
+    API_REQUEST_LIMIT,
     API_TIMEOUT_SECONDS,
     API_URL,
     CACHE_TTL_SECONDS,
     MAX_RETRIES,
-    RETRY_BACKOFF_SECONDS,
     RESID_IQA_PAR_STATION_EN_TEMPS_REEL,
     RESID_LIST,
+    RETRY_BACKOFF_SECONDS,
     USER_AGENT,
 )
 from montreal_aqi_api.exceptions import APIInvalidResponse, APIServerUnreachable
 
 logger = logging.getLogger(__name__)
 
-Params = Dict[str, Union[str, int, float, bool]]
+Params = dict[str, Any]
 
 # In-memory cache with size limit (FIFO eviction)
 # Using OrderedDict to maintain insertion order for cache eviction
-_api_cache: OrderedDict[str, tuple[float, List[Dict[str, Any]]]] = OrderedDict()
+_api_cache: OrderedDict[str, tuple[float, list[dict[str, Any]]]] = OrderedDict()
 _cache_max_size = 100  # Maximum number of cached queries
 
 # Metrics
@@ -43,12 +43,12 @@ requests_session.headers.update({"User-Agent": USER_AGENT})
 
 def _fetch(
     resource_id: str,
-    filters: Dict[str, Any] | None = None,
+    filters: dict[str, Any] | None = None,
     sort: str | None = None,
     distinct: bool = False,
-    fields: List[str] | None = None,
+    fields: list[str] | None = None,
     offset: int = 0,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     global total_api_requests, cache_hits, cache_misses
 
     # Create a cache key that includes filters, sort, distinct, fields, and offset
@@ -61,7 +61,7 @@ def _fetch(
             "fields": fields,
             "offset": offset,
         }
-        cache_key = f"{resource_id}:{str(sorted(cache_params.items()))}"
+        cache_key = f"{resource_id}:{sorted(cache_params.items())!s}"
 
     now = time.time()
     if cache_key in _api_cache:
@@ -81,29 +81,24 @@ def _fetch(
     )
 
     start_time = time.time()
-    params: Params = {
+    # The portal ignores `filters` on GET requests but applies it on POST with a
+    # JSON body, so the query is sent as a JSON payload.
+    body: Params = {
         "resource_id": resource_id,
+        "limit": API_REQUEST_LIMIT,
     }
     if filters:
-        params["filters"] = json.dumps(filters)
-    if sort:
-        params["sort"] = sort
-    if distinct:
-        params["distinct"] = str(distinct).lower()
-    if offset:
-        params["offset"] = offset
-
-    # Build request params with repeated fields if specified
-    # CKAN API expects fields=col1&fields=col2&... (not comma-separated)
-    request_params: list[tuple[str, str]] = [(k, str(v)) for k, v in params.items()]
+        body["filters"] = filters
     if fields:
-        for field in fields:
-            request_params.append(("fields", field))
+        body["fields"] = fields
+    if sort:
+        body["sort"] = sort
+    if distinct:
+        body["distinct"] = distinct
+    if offset:
+        body["offset"] = offset
 
-    # Log the complete request URL and parameters
-    query_string = urlencode(request_params)
-    complete_url = f"{API_URL}?{query_string}"
-    logger.debug("Request URL: %s", complete_url)
+    logger.debug("Request: POST %s %s", API_URL, json.dumps(body))
     if fields:
         logger.debug("Selected fields: %s", ", ".join(fields))
     if filters:
@@ -116,8 +111,8 @@ def _fetch(
     last_exc = None
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests_session.get(
-                API_URL, params=request_params, timeout=API_TIMEOUT_SECONDS
+            response = requests_session.post(
+                API_URL, json=body, timeout=API_TIMEOUT_SECONDS
             )
             response.raise_for_status()
             break  # Success, exit retry loop
@@ -171,7 +166,7 @@ def _fetch(
     return records
 
 
-def get_api_metrics() -> Dict[str, Union[int, float]]:
+def get_api_metrics() -> dict[str, int | float]:
     """Return API usage metrics."""
     return {
         "total_api_requests": total_api_requests,
@@ -183,13 +178,13 @@ def get_api_metrics() -> Dict[str, Union[int, float]]:
     }
 
 
-def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
+def fetch_latest_station_records(station_id: str) -> list[dict[str, Any]]:
     """
     Return the latest available records for a given station ID.
 
-    Uses server-side filtering by stationId to fetch data for this station,
-    then sorts by heure (as integer) client-side to get the most recent hour.
-    Also selects only required fields to minimize data transfer.
+    Requests server-side filtering by stationId, verifies the returned station IDs
+    client-side, then sorts by heure to get the most recent hour. The request limit
+    ensures the API's default page size does not omit the latest records.
     """
     # Columns needed for station AQI data
     fields = ["stationId", "date", "heure", "pollutant", "valeur"]
@@ -203,6 +198,16 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
         filters=filters,
         fields=fields,
     )
+    matching_records = [
+        record for record in records if str(record.get("stationId")) == station_id
+    ]
+    if len(matching_records) != len(records):
+        logger.warning(
+            "API returned %d records outside station %s filter; discarding them",
+            len(records) - len(matching_records),
+            station_id,
+        )
+    records = matching_records
 
     if not records:
         logger.warning("No records found for station %s", station_id)
@@ -236,22 +241,22 @@ def fetch_latest_station_records(station_id: str) -> List[Dict[str, Any]]:
     return latest_records
 
 
-def fetch_open_stations() -> List[Dict[str, Any]]:
+def fetch_open_stations() -> list[dict[str, Any]]:
     """
     Return a list of currently open monitoring stations.
 
-    Uses server-side filtering by statut="ouvert" to fetch only open stations,
-    reducing the number of records processed client-side. Also selects only required
-    fields to minimize data transfer.
+    Requests server-side filtering by statut="ouvert" and verifies the returned
+    statuses client-side. Also selects only the fields needed for the station list.
     """
     # Columns needed for station list data
-    fields = ["numero_station", "nom", "adresse", "arrondissement_ville"]
+    fields = ["numero_station", "nom", "adresse", "arrondissement_ville", "statut"]
 
     # Use server-side filtering to fetch only open stations
     filters = {"statut": "ouvert"}
     records = _fetch(RESID_LIST, filters=filters, fields=fields)
+    records = [record for record in records if record.get("statut") == "ouvert"]
 
-    stations: List[Dict[str, Any]] = []
+    stations: list[dict[str, Any]] = []
 
     for r in records:
         stations.append(
